@@ -1,5 +1,9 @@
-#ifndef RADIX_TREE_H
-#define RADIX_TREE_H
+/*
+ * radix_tree.h
+ */
+
+#ifndef _RADIX_TREE_H_
+#define _RADIX_TREE_H_
 
 struct radix_node {
 	void *slots[0];
