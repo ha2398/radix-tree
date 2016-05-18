@@ -15,13 +15,19 @@ struct radix_tree {
         int max_height; /* depends on the number of bits and the radix */
 };
 
-/* @bits: the number of bits to track; say, 32 bits */
+// Initiaizes @tree according to the number of @bits and specified @radix
 void radix_tree_init(struct radix_tree *tree, int bits, int radix);
 
+// Inserts @item associated with @index into the @tree 
+int radix_tree_insert(struct radix_tree *tree,
+		      unsigned long index, void *item);
+
+// @TODO
 void *radix_tree_find_alloc(struct radix_tree *tree, unsigned long index,
                             void *(*create)(unsigned long),
                             void *(*delete)(void *));
 
+// @TODO
 void *radix_tree_find(struct radix_tree *tree, unsigned long index);
 
 /*

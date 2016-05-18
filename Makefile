@@ -23,7 +23,7 @@ radix_tree.o: radix_tree.c radix_tree.h
 
 radix_test.o: radix_test.c radix_tree.h
 
-radix_test: radix_test.o
+radix_test: radix_test.o libradixtree.a
 
 .PHONY: clean
 clean:
