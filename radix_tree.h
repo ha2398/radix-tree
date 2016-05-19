@@ -10,29 +10,25 @@ struct radix_node {
 };
 
 struct radix_tree {
-        struct radix_node *node;
-        int radix; /* each node will have 2**radix slots */
-        int max_height; /* depends on the number of bits and the radix */
+	struct radix_node *node;
+	int radix; /* each node will have 2**radix slots */
+	int max_height; /* depends on the number of bits and the radix */
 };
 
-// Initiaizes @tree according to the number of @bits and specified @radix
+/* Initiaizes @tree according to the number of @bits and specified @radix */
 void radix_tree_init(struct radix_tree *tree, int bits, int radix);
 
-// Inserts @item associated with @index into the @tree 
-int radix_tree_insert(struct radix_tree *tree,
-		      unsigned long index, void *item);
-
-// @TODO
+/*
+ * If there is an item associated with @index in the tree, returns it.
+ * Otherwise, calls "create" function to allocate it if "create" is not NULL.
+ */
 void *radix_tree_find_alloc(struct radix_tree *tree, unsigned long index,
-                            void *(*create)(unsigned long),
-                            void *(*delete)(void *));
-
-// @TODO
-void *radix_tree_find(struct radix_tree *tree, unsigned long index);
+				void *(*create)(unsigned long));
 
 /*
- * Note: You probably want to implement radix_tree_find as
- * radix_tree_find_alloc(tree, index, NULL, NULL).
+ * Works just like radix_tree_find_alloc but does not allocate memory for
+ * new item if it is not found in the tree.
  */
+void *radix_tree_find(struct radix_tree *tree, unsigned long index);
 
 #endif

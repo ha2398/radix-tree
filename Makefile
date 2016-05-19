@@ -13,17 +13,17 @@ LDFLAGS = -g -L.
 # Libraries
 LDLIBS = -lradixtree -lm
 
-all: libradixtree.a radix_test
+all: radix_test
+
+radix_test: radix_test.o libradixtree.a
+
+radix_test.o: radix_test.c radix_tree.h
 
 libradixtree.a: radix_tree.o
 	ar rc libradixtree.a radix_tree.o
 	ranlib libradixtree.a
 
 radix_tree.o: radix_tree.c radix_tree.h
-
-radix_test.o: radix_test.c radix_tree.h
-
-radix_test: radix_test.o libradixtree.a
 
 .PHONY: clean
 clean:
