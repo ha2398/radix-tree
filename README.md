@@ -10,4 +10,4 @@ Radix Tree implementation in C
 
 3) There is no support to deleting an item in the tree.
 
-4) There is no support to deallocating the memory using by the tree (delete the tree).
+4) There is no support to deallocating the memory used by the tree (deleting the tree).
