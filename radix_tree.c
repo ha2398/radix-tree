@@ -73,7 +73,7 @@ void *radix_tree_find_alloc(struct radix_tree *tree, unsigned long index,
 			curr_node = curr_node->slots[slot];
 		}
 	}
-	
+
 	slot = find_slot(index, current_level, radix);
 	if (curr_node->slots[slot]) {
 		return curr_node->slots[slot];
