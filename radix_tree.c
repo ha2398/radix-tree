@@ -6,6 +6,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#ifndef ROUND_UP
+#define ROUND_UP(n,d) (((n) + (d) - 1) & -(d))
+#endif
+
 /* Prints an error @message and stops execution */
 void die_with_error(char *message)
 {
@@ -16,22 +20,17 @@ void die_with_error(char *message)
 /* Initializes a @node with the appropriate @n_slots number of slots */
 void init_node(struct radix_node **node, int n_slots)
 {
-	*node = (struct radix_node *)malloc(sizeof(void *) * n_slots);
+	*node = (struct radix_node *)calloc(n_slots, sizeof(void *));
 	if (!(*node))
-		die_with_error("Malloc failed.\n");
-
-	int i = 0;
-
-	for (; i < n_slots; i++)
-		(*node)->slots[i] = NULL;
+		die_with_error("calloc failed.\n");
 }
 
 void radix_tree_init(struct radix_tree *tree, int bits, int radix)
 {
 	tree->radix = radix;
-	tree->max_height = bits / radix;
+	tree->max_height = ROUND_UP(bits, radix);
 
-	int slots_len = 2 << radix;
+	int slots_len = 1 << radix;
 
 	init_node(&tree->node, slots_len);
 }
@@ -59,7 +58,7 @@ void *radix_tree_find_alloc(struct radix_tree *tree, unsigned long index,
 	int current_level = 0;
 	struct radix_node *curr_node = tree->node;
 	int radix = tree->radix;
-	int n_slots = 2 << radix;
+	int n_slots = 1 << radix;
 	int slot;
 
 	while (++current_level != tree->max_height) {
