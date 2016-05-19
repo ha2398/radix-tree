@@ -38,18 +38,7 @@ void radix_tree_init(struct radix_tree *tree, int bits, int radix)
 /* Finds the appropriate slot to follow in the tree */
 int find_slot(unsigned long index, int level, int radix)
 {
-	unsigned long mask = 0;
-	int tmp = radix;
-
-	while (tmp-- != 0)
-		mask = (mask << 1) | 1;
-
-	int n_bits = sizeof(mask) * 8;
-	int offset = (n_bits - level * radix);
-
-	index = index >> offset;
-	mask = mask & index;
-	return (int)mask;
+	return (int) (index >> level*radix) & ((1 << radix) - 1);
 }
 
 void *radix_tree_find_alloc(struct radix_tree *tree, unsigned long index,
