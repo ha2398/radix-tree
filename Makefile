@@ -1,6 +1,6 @@
 # Radix Tree Makefile
 
-CC = gcc
+CC = cgcc
 
 INCLUDES = -I.
 

@@ -3,7 +3,6 @@
  */
 
 #include "radix_tree.h"
-#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -32,7 +31,7 @@ void radix_tree_init(struct radix_tree *tree, int bits, int radix)
 	tree->radix = radix;
 	tree->max_height = bits / radix;
 
-	int slots_len = pow(2, radix);
+	int slots_len = 2 << radix;
 
 	init_node(&tree->node, slots_len);
 }
@@ -60,7 +59,7 @@ void *radix_tree_find_alloc(struct radix_tree *tree, unsigned long index,
 	int current_level = 0;
 	struct radix_node *curr_node = tree->node;
 	int radix = tree->radix;
-	int n_slots = pow(2, radix);
+	int n_slots = 2 << radix;
 	int slot;
 
 	while (++current_level != tree->max_height) {
