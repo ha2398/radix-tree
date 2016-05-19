@@ -27,4 +27,4 @@ radix_tree.o: radix_tree.c radix_tree.h
 
 .PHONY: clean
 clean:
-	rm -f *.o a.out radix_test
+	rm -f *.o .out *.a radix_test
