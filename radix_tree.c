@@ -11,14 +11,14 @@
 #endif
 
 /* Prints an error @message and stops execution */
-void die_with_error(char *message)
+static void die_with_error(char *message)
 {
 	perror(message);
 	exit(EXIT_FAILURE);
 }
 
 /* Initializes a @node with the appropriate @n_slots number of slots */
-void init_node(struct radix_node **node, int n_slots)
+static void init_node(struct radix_node **node, int n_slots)
 {
 	*node = calloc(n_slots, sizeof(void *));
 	if (!(*node))
@@ -36,7 +36,7 @@ void radix_tree_init(struct radix_tree *tree, int bits, int radix)
 }
 
 /* Finds the appropriate slot to follow in the tree */
-int find_slot_index(unsigned long key, int levels_left, int radix)
+static int find_slot_index(unsigned long key, int levels_left, int radix)
 {
 	return (int) (key >> (levels_left * radix) & ((1 << radix) - 1));
 }

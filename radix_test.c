@@ -7,9 +7,9 @@
 #include <stdlib.h>
 
 /* Allocates memory for an unsigned long item */
-void *allocate_item(unsigned long item)
+static void *allocate_item(unsigned long item)
 {
-	unsigned long *new = (unsigned long *)malloc(sizeof(unsigned long));
+	unsigned long *new = malloc(sizeof(unsigned long));
 	*new = item;
 
 	if (!new) {
