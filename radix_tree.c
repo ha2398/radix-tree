@@ -7,7 +7,7 @@
 #include <stdlib.h>
 
 #ifndef DIV_ROUND_UP
-#define DIV_ROUND_UP(n,d) (((n) + (d) - 1) / (d))
+#define DIV_ROUND_UP(n, d) (((n) + (d) - 1) / (d))
 #endif
 
 /* Prints an error @message and stops execution */
@@ -27,6 +27,16 @@ static void init_node(struct radix_node **node, int n_slots)
 
 void radix_tree_init(struct radix_tree *tree, int bits, int radix)
 {
+	if (radix < 1) {
+		perror("Invalid radix\n");
+		return;
+	}
+
+	if (bits < 1) {
+		perror("Invalid number of bits\n");
+		return;
+	}
+
 	int n_slots = 1 << radix;
 
 	tree->radix = radix;
@@ -54,12 +64,13 @@ void *radix_tree_find_alloc(struct radix_tree *tree, unsigned long key,
 
 	while (levels_left) {
 		index = find_slot_index(key, levels_left, radix);
+
 		next_slot = &current_node->slots[index];
 
 		if (*next_slot) {
 			current_node = *next_slot;
 		} else if (create) {
-			init_node(next_slot, n_slots);	
+			init_node(next_slot, n_slots);
 			current_node = *next_slot;
 		} else {
 			return NULL;
@@ -79,7 +90,7 @@ void *radix_tree_find_alloc(struct radix_tree *tree, unsigned long key,
 	} else {
 		return NULL;
 	}
-}	
+}
 
 void *radix_tree_find(struct radix_tree *tree, unsigned long key)
 {
