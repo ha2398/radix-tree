@@ -6,8 +6,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#ifndef ROUND_UP
-#define ROUND_UP(n,d) (((n) + (d) - 1) & -(d))
+#ifndef DIV_ROUND_UP
+#define DIV_ROUND_UP(n,d) (((n) + (d) - 1) / (d))
 #endif
 
 /* Prints an error @message and stops execution */
@@ -20,60 +20,68 @@ void die_with_error(char *message)
 /* Initializes a @node with the appropriate @n_slots number of slots */
 void init_node(struct radix_node **node, int n_slots)
 {
-	*node = (struct radix_node *)calloc(n_slots, sizeof(void *));
+	*node = calloc(n_slots, sizeof(void *));
 	if (!(*node))
 		die_with_error("calloc failed.\n");
 }
 
 void radix_tree_init(struct radix_tree *tree, int bits, int radix)
 {
+	int n_slots = 1 << radix;
+
 	tree->radix = radix;
-	tree->max_height = ROUND_UP(bits, radix);
+	tree->max_height = DIV_ROUND_UP(bits, radix);
 
-	int slots_len = 1 << radix;
-
-	init_node(&tree->node, slots_len);
+	init_node(&tree->node, n_slots);
 }
 
 /* Finds the appropriate slot to follow in the tree */
-int find_slot(unsigned long index, int level, int radix)
+int find_slot_index(unsigned long key, int levels_left, int radix)
 {
-	return (int) (index >> level*radix) & ((1 << radix) - 1);
+	return (int) (key >> (levels_left * radix) & ((1 << radix) - 1));
 }
 
-void *radix_tree_find_alloc(struct radix_tree *tree, unsigned long index,
+void *radix_tree_find_alloc(struct radix_tree *tree, unsigned long key,
 			    void *(*create)(unsigned long))
 {
-	int current_level = 0;
-	struct radix_node *curr_node = tree->node;
+	int levels_left = tree->max_height - 1;
 	int radix = tree->radix;
 	int n_slots = 1 << radix;
-	int slot;
+	int index;
 
-	while (++current_level != tree->max_height) {
-		slot = find_slot(index, current_level, radix);
-		if (curr_node->slots[slot]) {
-			curr_node = curr_node->slots[slot];
+	struct radix_node *current_node = tree->node;
+	void **next_slot = NULL;
+
+	while (levels_left) {
+		index = find_slot_index(key, levels_left, radix);
+		next_slot = &current_node->slots[index];
+
+		if (*next_slot) {
+			current_node = *next_slot;
+		} else if (create) {
+			init_node(next_slot, n_slots);	
+			current_node = *next_slot;
 		} else {
-			init_node((struct radix_node **)&curr_node->slots[slot],
-				   n_slots);
-			curr_node = curr_node->slots[slot];
+			return NULL;
 		}
+
+		levels_left--;
 	}
 
-	slot = find_slot(index, current_level, radix);
-	if (curr_node->slots[slot]) {
-		return curr_node->slots[slot];
+	index = find_slot_index(key, levels_left, radix);
+	next_slot = &current_node->slots[index];
+
+	if (*next_slot) {
+		return *next_slot;
 	} else if (create) {
-		curr_node->slots[slot] = create(index);
-		return curr_node->slots[slot];
+		*next_slot = create(key);
+		return *next_slot;
 	} else {
 		return NULL;
 	}
-}
+}	
 
-/* @TODO */
-void *radix_tree_find(struct radix_tree *tree, unsigned long index)
+void *radix_tree_find(struct radix_tree *tree, unsigned long key)
 {
-	return radix_tree_find_alloc(tree, index, NULL);
+	return radix_tree_find_alloc(tree, key, NULL);
 }

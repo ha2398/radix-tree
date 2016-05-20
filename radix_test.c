@@ -10,6 +10,7 @@
 void *allocate_item(unsigned long item)
 {
 	unsigned long *new = (unsigned long *)malloc(sizeof(unsigned long));
+	*new = item;
 
 	if (!new) {
 		perror("Malloc failed.\n");
@@ -23,24 +24,19 @@ int main(int argc, char **argv)
 {
 	struct radix_tree myTree;
 
-	radix_tree_init(&myTree, 64, 8);
+	radix_tree_init(&myTree, 6, 2);
 
-	void *item = radix_tree_find(&myTree, 123130384);
+	void *item = radix_tree_find(&myTree, 39);
 
-	if (!item)
-		printf("Find for 123130384 returned NULL.\n");
+	printf("%p\n", item);
 
-	item = radix_tree_find_alloc(&myTree, 123130384, allocate_item);
+	item = radix_tree_find_alloc(&myTree, 39, allocate_item);
 
-	if (item)
-		printf("Find alloc for 123130384 returned valid pointer.\n");
+	printf("%p\n", item);
 
-	void *item2 = radix_tree_find(&myTree, 123130384);
+	void *item2 = radix_tree_find(&myTree, 39);
 
-	if (item == item2) {
-		printf("Find for 123130384 returned same pointer as");
-		printf(" previously.\n");
-	}
+	printf("%p\n", item2);
 
 	return 0;
 }

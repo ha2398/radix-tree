@@ -19,7 +19,7 @@ struct radix_tree {
 void radix_tree_init(struct radix_tree *tree, int bits, int radix);
 
 /*
- * If there is an item associated with @index in the tree, returns it.
+ * If there is an item associated with @key in the tree, returns it.
  * Otherwise, calls "create" function to allocate it if "create" is not NULL.
  */
 void *radix_tree_find_alloc(struct radix_tree *tree, unsigned long index,
@@ -29,6 +29,6 @@ void *radix_tree_find_alloc(struct radix_tree *tree, unsigned long index,
  * Works just like radix_tree_find_alloc but does not allocate memory for
  * new item if it is not found in the tree.
  */
-void *radix_tree_find(struct radix_tree *tree, unsigned long index);
+void *radix_tree_find(struct radix_tree *tree, unsigned long key);
 
 #endif

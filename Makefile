@@ -11,7 +11,7 @@ CFLAGS = -g -Wall $(INCLUDES)
 LDFLAGS = -g -L.
 
 # Libraries
-LDLIBS = -lradixtree -lm
+LDLIBS = -lradixtree
 
 all: radix_test
 
