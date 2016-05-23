@@ -7,10 +7,9 @@
 #include <stdlib.h>
 #include <time.h>
 
-#define RANGE 8 /* maximum value for bits or radix */
-#define KEY_MAX 255 /* maximum possible value for a key */
-#define N_KEYS 50
-#define N_TESTS 20
+#define RANGE 4 /* maximum value for bits or radix */
+#define N_KEYS 20
+#define N_TESTS 10
 
 /* Allocates memory for an unsigned long @item */
 static void *create(unsigned long item)
@@ -26,10 +25,22 @@ static void *create(unsigned long item)
 	}
 }
 
+/*
+ * Test can detect two kinds of errors:
+ * 1) Error in find_alloc
+ *	i) key is already in the tree, but find_alloc returns an address which
+ *	differs from the actual key's location.
+ *	ii) key is not present in the tree, but find_alloc returns NULL
+ *
+ * 2) Error in find
+ *	i) find returns an address which differs from the key's location in
+ *	the tree (which can be NULL, if the key hasn't been inserted)
+ */
 int main(int argc, char **argv)
 {
 	int i, j;
 	int bits;
+	int key_max; /* maximum possible value for a key */
 	int radix;
 	int tests = N_TESTS;
 	short err_flag = 0;
@@ -41,39 +52,38 @@ int main(int argc, char **argv)
 
 	srand((unsigned int) time(&t));
 
-	items = malloc(KEY_MAX * sizeof(*items));
-
 	/* test loop */
 	for (j = 0; j < tests; j++) {
 		bits = (rand() % RANGE) + 1;
+		key_max = (1 << bits) - 1;
 		radix = (rand() % RANGE) + 1;
+
+		items = calloc(key_max, sizeof(*items));
 
 		radix_tree_init(&myTree[j], bits, radix);
 
 		printf("TESTING TREE: BITS = %d, RADIX = %d\n", bits, radix);
 
-		for (i = 0; i < KEY_MAX; i++)
-			items[i] = NULL;
-
 		for (i = 0; i < N_KEYS; i++)
-			keys[i] = rand() % KEY_MAX;
+			keys[i] = rand() % key_max;
 
 		/* testing find_alloc */
 		for (i = 0; i < N_KEYS; i++) {
 			temp = radix_tree_find_alloc(&myTree[j], keys[i],
 						     create);
 
-			if (items[keys[i]])
+			if (items[keys[i]]) {
 				if (temp != items[keys[i]])
 					err_flag = 1;
-			else if (!temp)
+			} else if (!temp) {
 				err_flag = 1;
-			else
+			} else {
 				items[keys[i]] = temp;
+			}
 		}
 
 		for (i = 0; i < N_KEYS; i++)
-			keys[i] = rand() % KEY_MAX;
+			keys[i] = rand() % key_max;
 
 		/* testing find */
 		for (i = 0; i < N_KEYS; i++) {
@@ -82,6 +92,8 @@ int main(int argc, char **argv)
 			if (items[keys[i]] != temp)
 				err_flag = 2;
 		}
+
+		free(items);
 
 		if (err_flag) {
 			printf("\nError number %d detected\n", err_flag);
