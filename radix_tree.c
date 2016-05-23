@@ -17,14 +17,6 @@ static void die_with_error(char *message)
 	exit(EXIT_FAILURE);
 }
 
-/* Initializes a @node with the appropriate @n_slots number of slots */
-static void init_node(struct radix_node **node, int n_slots)
-{
-	*node = calloc(n_slots, sizeof(void *));
-	if (!(*node))
-		die_with_error("calloc failed.\n");
-}
-
 void radix_tree_init(struct radix_tree *tree, int bits, int radix)
 {
 	if (radix < 1) {
@@ -42,7 +34,10 @@ void radix_tree_init(struct radix_tree *tree, int bits, int radix)
 	tree->radix = radix;
 	tree->max_height = DIV_ROUND_UP(bits, radix);
 
-	init_node(&tree->node, n_slots);
+	tree->node = calloc(n_slots, sizeof(void *));
+
+	if (!tree->node)
+		die_with_error("calloc failed.\n");
 }
 
 /* Finds the appropriate slot to follow in the tree */
@@ -70,8 +65,12 @@ void *radix_tree_find_alloc(struct radix_tree *tree, unsigned long key,
 		if (*next_slot) {
 			current_node = *next_slot;
 		} else if (create) {
-			init_node(next_slot, n_slots);
-			current_node = *next_slot;
+			*next_slot = calloc(n_slots, sizeof(void *));
+
+			if (!*next_slot)
+				die_with_error("calloc failed.\n");
+			else
+				current_node = *next_slot;
 		} else {
 			return NULL;
 		}
