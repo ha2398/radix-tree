@@ -7,8 +7,8 @@
 #include <stdlib.h>
 #include <time.h>
 
-#define RANGE 4 /* maximum value for bits or radix */
-#define N_KEYS 20
+#define RANGE 16 /* maximum value for bits or radix */
+#define N_KEYS 100
 #define N_TESTS 10
 
 /* Allocates memory for an unsigned long @item */
@@ -94,6 +94,8 @@ int main(int argc, char **argv)
 		}
 
 		free(items);
+
+		radix_tree_delete(&myTree[j]);
 
 		if (err_flag) {
 			printf("\nError number %d detected\n", err_flag);

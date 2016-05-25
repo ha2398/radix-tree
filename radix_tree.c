@@ -95,3 +95,35 @@ void *radix_tree_find(struct radix_tree *tree, unsigned long key)
 {
 	return radix_tree_find_alloc(tree, key, NULL);
 }
+
+static void radix_tree_delete_node(struct radix_node *node, int n_slots,
+				   int levels_left)
+{
+	int i;
+	struct radix_node *next_node = NULL;
+
+	if (levels_left) {
+		for (i = 0; i < n_slots; i++) {
+			next_node = node->slots[i];
+
+			if (next_node) {
+				radix_tree_delete_node(next_node, n_slots,
+						       levels_left - 1);
+				free(next_node);
+			}
+		}
+	} else {
+		for (i = 0; i < n_slots; i++) {
+			if (node->slots[i])
+				free(node->slots[i]);
+		}
+	}
+}
+
+void radix_tree_delete(struct radix_tree *tree)
+{
+	int n_slots = 1 << tree->radix;
+
+	radix_tree_delete_node(tree->node, n_slots, tree->max_height - 1);
+	free(tree->node);
+}

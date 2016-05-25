@@ -31,4 +31,9 @@ void *radix_tree_find_alloc(struct radix_tree *tree, unsigned long index,
  */
 void *radix_tree_find(struct radix_tree *tree, unsigned long key);
 
+/*
+ * Deletes a tree and its contents by deallocating its memory
+ */
+void radix_tree_delete(struct radix_tree *tree);
+
 #endif
