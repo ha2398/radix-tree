@@ -37,7 +37,7 @@ void radix_tree_init(struct radix_tree *tree, int bits, int radix)
 	tree->node = calloc(n_slots, sizeof(void *));
 
 	if (!tree->node)
-		die_with_error("calloc failed.\n");
+		die_with_error("failed to create new node.\n");
 }
 
 /* Finds the appropriate slot to follow in the tree */
@@ -68,7 +68,7 @@ void *radix_tree_find_alloc(struct radix_tree *tree, unsigned long key,
 			*next_slot = calloc(n_slots, sizeof(void *));
 
 			if (!*next_slot)
-				die_with_error("calloc failed.\n");
+				die_with_error("failed to create new node.\n");
 			else
 				current_node = *next_slot;
 		} else {
