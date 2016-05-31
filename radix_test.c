@@ -9,7 +9,7 @@
 
 #define RANGE 16 /* maximum value for bits or radix */
 #define N_KEYS 100000
-#define N_TESTS 100
+#define N_TESTS 10
 
 /* Prints an error @message and stops execution */
 static void die_with_error(char *message)

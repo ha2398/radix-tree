@@ -81,14 +81,10 @@ void *radix_tree_find_alloc(struct radix_tree *tree, unsigned long key,
 	index = find_slot_index(key, levels_left, radix);
 	next_slot = &current_node->slots[index];
 
-	if (*next_slot) {
-		return *next_slot;
-	} else if (create) {
+	if (!(*next_slot) && create)
 		*next_slot = create(key);
-		return *next_slot;
-	} else {
-		return NULL;
-	}
+
+	return *next_slot;
 }
 
 void *radix_tree_find(struct radix_tree *tree, unsigned long key)
