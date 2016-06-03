@@ -5,7 +5,6 @@
 #include "radix_tree.h"
 #include <stdio.h>
 #include <stdlib.h>
-#include <time.h>
 
 #define RANGE 16 /* maximum value for bits or radix */
 #define N_KEYS 100000
@@ -48,10 +47,8 @@ int main(int argc, char **argv)
 	int i, j;
 	int bits;
 	int radix;
-	int tests = N_TESTS;
 	short err_flag = 0;
 	struct radix_tree myTree;
-	time_t t;
 	unsigned long *keys; /* stores randomly generated keys */
 	unsigned long key_max; /* maximum possible value for a key */
 	void **items; /* items[key[x]] = lookup for key[x] */
@@ -62,10 +59,8 @@ int main(int argc, char **argv)
 	if (!keys)
 		die_with_error("failed to allocate keys array.\n");
 
-	srand((unsigned int) time(&t));
-
 	/* test loop */
-	for (j = 0; j < tests; j++) {
+	for (j = 0; j < N_TESTS; j++) {
 		bits = (rand() % RANGE) + 1;
 		key_max = (unsigned long) ((1L << bits) - 1L);
 		radix = (rand() % RANGE) + 1;
