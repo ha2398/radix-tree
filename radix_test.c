@@ -24,7 +24,7 @@ static void *create(unsigned long item)
 	*new = item;
 
 	if (!new) {
-		perror("malloc failed.\n");
+		die_with_error("malloc failed.\n");
 		return NULL;
 	} else {
 		return (void *)new;
@@ -109,7 +109,7 @@ int main(int argc, char **argv)
 		radix_tree_delete(&myTree);
 
 		if (err_flag) {
-			printf("\nError number %d detected\n", err_flag);
+			fprintf(stderr, "\n[Error number %d detected]\n", err_flag);
 			free(keys);
 			return 0;
 		}
