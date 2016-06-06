@@ -5,6 +5,7 @@
 #include "radix_tree.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
 
 #define RANGE 16 /* maximum value for bits or radix */
 #define N_KEYS 100000
@@ -58,6 +59,8 @@ int main(int argc, char **argv)
 
 	if (!keys)
 		die_with_error("failed to allocate keys array.\n");
+
+	srand(time(NULL));
 
 	/* test loop */
 	for (j = 0; j < N_TESTS; j++) {
