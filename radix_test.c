@@ -5,7 +5,6 @@
 #include "radix_tree.h"
 #include <stdio.h>
 #include <stdlib.h>
-#include <time.h>
 
 /* Prints an error @message and stops execution */
 static void die_with_error(char *message)
@@ -78,7 +77,7 @@ int main(int argc, char **argv)
 	if (!keys)
 		die_with_error("failed to allocate keys array.\n");
 
-	srand(time(NULL));
+	srand(0);
 
 	/* test loop */
 	for (j = 0; j < N_TESTS; j++) {
