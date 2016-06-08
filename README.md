@@ -11,4 +11,3 @@ Radix Tree implementation in C
 3) There is no support to deleting an item in the tree.
 
 4) It does not support keys mapped to same nodes.
-

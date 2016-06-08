@@ -7,10 +7,6 @@
 #include <stdlib.h>
 #include <time.h>
 
-#define RANGE 16 /* maximum value for bits or radix */
-#define N_KEYS 100000
-#define N_TESTS 10
-
 /* Prints an error @message and stops execution */
 static void die_with_error(char *message)
 {
@@ -32,6 +28,15 @@ static void *create(unsigned long item)
 	}
 }
 
+static void print_usage(char *file_name)
+{
+	fprintf(stderr, "Error: Invalid number of arguments\n\n");
+	fprintf(stderr, "Usage:\t%s r k t\n", file_name);
+	fprintf(stderr, "r: Maximum number of bits and radix\n");
+	fprintf(stderr, "k: Number of keys to insert into the trees\n");
+	fprintf(stderr, "t: Number of test instances\n");
+}
+
 /*
  * Test can detect two kinds of errors:
  * 1) Error in find_alloc
@@ -45,6 +50,10 @@ static void *create(unsigned long item)
  */
 int main(int argc, char **argv)
 {
+	int RANGE;
+	unsigned long N_KEYS;
+	unsigned long N_TESTS;
+
 	int i, j;
 	int bits;
 	int radix;
@@ -54,6 +63,15 @@ int main(int argc, char **argv)
 	unsigned long key_max; /* maximum possible value for a key */
 	void **items; /* items[key[x]] = lookup for key[x] */
 	void *temp; /* result of tree lookups */
+
+	if (argc != 4) {
+		print_usage(argv[0]);
+		return 0;
+	} else {
+		RANGE = atoi(argv[1]);
+		N_KEYS = atoi(argv[2]);
+		N_TESTS = atoi(argv[3]);
+	}
 
 	keys = malloc(sizeof(*keys) * N_KEYS);
 
