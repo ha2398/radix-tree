@@ -63,7 +63,7 @@ int main(int argc, char **argv)
 	void **items; /* items[key[x]] = lookup for key[x] */
 	void *temp; /* result of tree lookups */
 
-	if (argc != 4) {
+	if (argc < 4) {
 		print_usage(argv[0]);
 		return 0;
 	} else {
