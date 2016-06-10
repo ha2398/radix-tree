@@ -18,6 +18,7 @@ set -e
 GRAPH_EXT="png"
 GNUPLOT_TERM="png"
 GRAPH_SIZE="1024,768"
+GRAPH_STYLE="smooth csplines"
 
 get_test_files()
 {
@@ -95,7 +96,7 @@ plot_all()
 		echo "set title 'Branch $output'" >> plot_commands.gp
 		echo "set xlabel 'Number of Threads'" >> plot_commands.gp
 		echo "set ylabel 'Running Time'" >> plot_commands.gp
-		echo "plot [1:] '$filename' using 1:2 with linespoints" >> plot_commands.gp
+		echo "plot [1:] '$filename' using 1:2 $GRAPH_STYLE" >> plot_commands.gp
 
 		gnuplot plot_commands.gp
 		mv $output.$GRAPH_EXT ../graphs/$output.$GRAPH_EXT
