@@ -34,8 +34,8 @@ clean:
 GRAPH = 1
 RANGE = 8
 KEYS = 10000
-TESTS = 10
-THREADS = 2
+TESTS = 1
+THREADS = 32
 
 .PHONY: test_and_plot
 test_and_plot:

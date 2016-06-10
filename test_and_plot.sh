@@ -60,12 +60,12 @@ test1()
 			echo -n "$counter\t" >> $filename.data
 
 			START=$(date +%s.%N)
-			eval "taskset -c 0-$counter $file $1 $2 $3 $counter > /dev/null"
+			taskset -c 0-$((counter-1)) $file $1 $2 $3 $counter > /dev/null
 			END=$(date +%s.%N)
 			DIFF=$(echo "$END - $START" | bc)
 			echo "$DIFF" >> $filename.data
 
-			counter=$((counter+2))
+			counter=$((counter+1))
 		done
 
 		echo "Finished testing $filename"
