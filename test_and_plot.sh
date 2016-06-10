@@ -1,5 +1,7 @@
 #!/bin/sh
 
+set -e
+
 # Test and plot script for Radix Tree Implementation tests.
 
 # Step through GitHub branches and obtain the executable test files
