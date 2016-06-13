@@ -20,6 +20,14 @@ GNUPLOT_TERM="png"
 GRAPH_SIZE="1024,768"
 GRAPH_STYLE="smooth csplines"
 
+print_help()
+{
+	echo "Test and plot script for Radix Tree Implementation tests.\n"
+	echo "Graph Type 1:\tNumber of Threads x Running time."
+	echo "\t$0 1 <range> <keys> <tests> <max_threads>"
+	exit
+}
+
 get_test_files()
 {
 	rm -rf test_files
@@ -112,17 +120,23 @@ plot_all()
 
 # Main #
 
+if [ "$#" -ge 1 ] && [ "$1" = "help" ]; then
+	print_help
+fi
+
 if [ "$#" -lt 1 ]; then
 	echo "Error. Please specify the type of graph to generate"
 	echo "Usage:\t$0 <type> <parameters>"
 	echo "<type>: Graph type [1]"
 	echo "<parameters>: Necessary parameters to generate the specified graph."
+	echo "\nFor help, use $0 help"
 	exit
 fi
 
 if [ "$1" -eq 1 ] && [ "$#" -lt 5 ]; then
 	echo "Error. Insufficient number of parameters."
 	echo "For graph type $1, please use: $0 $1 <range> <keys> <tests> <max_threads>"
+	echo "\nFor help, use $0 help"
 	exit
 fi
 
@@ -136,6 +150,7 @@ case "$1" in
 	echo "Error. Unknown graph type."
 	echo "Graph types:"
 	echo "[1]\tNumber of threads x Running Time"
+	echo "\nFor help, use $0 help"
 	exit
 esac
 
