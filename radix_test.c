@@ -103,15 +103,12 @@ int main(int argc, char **argv)
 		for (i = 0; i < N_KEYS; i++)
 			keys[i] = rand() % key_max;
 
+		marker = clock();
+
 		/* testing find_alloc */
 		for (i = 0; i < N_KEYS; i++) {
-			marker = clock();
-
 			temp = radix_tree_find_alloc(&myTree, keys[i],
 						     create);
-
-			lookups_time += (double) (clock() - marker) / 
-				CLOCKS_PER_SEC;
 
 			if (items[keys[i]]) {
 				if (temp != items[keys[i]])
@@ -123,21 +120,24 @@ int main(int argc, char **argv)
 			}
 		}
 
+		lookups_time += (double) (clock() - marker) / 
+				CLOCKS_PER_SEC;
+
 		for (i = 0; i < N_KEYS; i++)
 			keys[i] = rand() % key_max;
 
+		marker = clock();
+
 		/* testing find */
 		for (i = 0; i < N_KEYS; i++) {
-			marker = clock();
-
 			temp = radix_tree_find(&myTree, keys[i]);
-
-			lookups_time += (double) (clock() - marker) / 
-				CLOCKS_PER_SEC;
 
 			if (items[keys[i]] != temp)
 				err_flag = 2;
 		}
+
+		lookups_time += (double) (clock() - marker) / 
+				CLOCKS_PER_SEC;
 
 		free(items);
 
@@ -150,8 +150,9 @@ int main(int argc, char **argv)
 		}
 	}
 
-	printf("%f\n", lookups_time);
-
 	free(keys);
+
+	printf("%f\n", lookups_time);
+	
 	return 0;
 }
