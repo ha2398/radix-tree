@@ -5,6 +5,7 @@
 #include "radix_tree.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
 
 /* Prints an error @message and stops execution */
 static void die_with_error(char *message)
@@ -49,6 +50,9 @@ static void print_usage(char *file_name)
  */
 int main(int argc, char **argv)
 {
+	clock_t marker;
+	double lookups_time = 0;
+
 	int RANGE;
 	unsigned long N_KEYS;
 	unsigned long N_TESTS;
@@ -85,8 +89,9 @@ int main(int argc, char **argv)
 		key_max = (unsigned long) ((1L << bits) - 1L);
 		radix = (rand() % RANGE) + 1;
 
-		printf("Test %d\t", j);
-		printf("TESTING TREE: BITS = %d, RADIX = %d\n", bits, radix);
+		fprintf(stderr, "Test %d\t", j);
+		fprintf(stderr, "TESTING TREE: BITS = %d, RADIX = %d\n",
+			bits, radix);
 
 		items = calloc(key_max, sizeof(*items));
 
@@ -100,8 +105,13 @@ int main(int argc, char **argv)
 
 		/* testing find_alloc */
 		for (i = 0; i < N_KEYS; i++) {
+			marker = clock();
+
 			temp = radix_tree_find_alloc(&myTree, keys[i],
 						     create);
+
+			lookups_time += (double) (clock() - marker) / 
+				CLOCKS_PER_SEC;
 
 			if (items[keys[i]]) {
 				if (temp != items[keys[i]])
@@ -118,7 +128,12 @@ int main(int argc, char **argv)
 
 		/* testing find */
 		for (i = 0; i < N_KEYS; i++) {
+			marker = clock();
+
 			temp = radix_tree_find(&myTree, keys[i]);
+
+			lookups_time += (double) (clock() - marker) / 
+				CLOCKS_PER_SEC;
 
 			if (items[keys[i]] != temp)
 				err_flag = 2;
@@ -134,6 +149,8 @@ int main(int argc, char **argv)
 			return 0;
 		}
 	}
+
+	printf("%f\n", lookups_time);
 
 	free(keys);
 	return 0;

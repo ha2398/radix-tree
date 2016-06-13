@@ -19,7 +19,6 @@ GRAPH_EXT="png"
 GNUPLOT_TERM="png"
 GRAPH_SIZE="1024,768"
 GRAPH_STYLE="smooth csplines"
-
 print_help()
 {
 	echo "Test and plot script for Radix Tree Implementation tests.\n"
@@ -68,11 +67,7 @@ test1()
 		do
 			echo -n "$counter\t" >> $filename.data
 
-			START=$(date +%s.%N)
-			taskset -c 0-$((counter-1)) $file $1 $2 $3 $counter > /dev/null
-			END=$(date +%s.%N)
-			DIFF=$(echo "$END - $START" | bc)
-			echo "$DIFF" >> $filename.data
+			taskset -c 0-$((counter-1)) $file $1 $2 $3 $counter >> $filename.data 2> /dev/null 
 
 			counter=$((counter+1))
 		done
@@ -104,7 +99,8 @@ plot_all()
 		echo "set title 'Branch $output'" >> plot_commands.gp
 		echo "set xlabel 'Number of Threads'" >> plot_commands.gp
 		echo "set ylabel 'Running Time'" >> plot_commands.gp
-		echo "plot [1:] '$filename' using 1:2 $GRAPH_STYLE" >> plot_commands.gp
+		echo -n "plot [1:] '$filename' using 1:2 $GRAPH_STYLE" >> plot_commands.gp
+		echo ", '$filename' with points" >> plot_commands.gp
 
 		gnuplot plot_commands.gp
 		mv $output.$GRAPH_EXT ../graphs/$output.$GRAPH_EXT
