@@ -27,7 +27,7 @@ radix_tree.o: radix_tree.c radix_tree.h
 
 .PHONY: clean
 clean:
-	rm -rf *.o .out *.a radix_test graphs
+	rm -rf *.o .out *.a radix_test graph.*
 
 # Test parameters (default)
 
@@ -35,7 +35,7 @@ GRAPH = 1
 RANGE = 8
 KEYS = 10000
 TESTS = 1
-THREADS = 32
+THREADS = 4
 
 .PHONY: test_and_plot
 test_and_plot:

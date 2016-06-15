@@ -82,31 +82,41 @@ plot_all()
 {
 	echo "Plotting graphs...\n"
 
-	rm -rf ../graphs/
-	mkdir ../graphs/
+	rm -rf plot_commands.gp
+	touch plot_commands.gp
+
+	echo -n "set terminal $GNUPLOT_TERM " >> plot_commands.gp
+	echo "size $GRAPH_SIZE" >> plot_commands.gp
+	echo "set output 'graph.$GRAPH_EXT'" >> plot_commands.gp
+	echo -n "set title \"Numer of Threads x Running Time\\\n" >> plot_commands.gp
+	echo "RANGE: $1 KEYS: $2 TESTS: $3\"">> plot_commands.gp
+
+	echo "set xlabel 'Number of Threads'" >> plot_commands.gp
+	echo "set ylabel 'Running Time (s)'" >> plot_commands.gp
+	echo "set xtics 1" >> plot_commands.gp
+
+	echo -n "plot [1:] " >> plot_commands.gp
+
+	counter=1
+	number_of_files="$(ls *.data | wc -l)"
 
 	for file in ./*.data
 	do
-		rm -rf plot_commands.gp
-		touch plot_commands.gp
+		branch=${file##./}
+		branch=${branch%.data}
+		echo -n "'$file' using 1:2 $GRAPH_STYLE title '$branch'" >> plot_commands.gp
 
-		filename=${file##./}
-		output=${filename%.data}
+		counter=$((counter+1))
+		if [ $counter -gt $number_of_files ]; then
+			break
+		fi
 
-		echo -n "set terminal $GNUPLOT_TERM " >> plot_commands.gp
-		echo "size $GRAPH_SIZE" >> plot_commands.gp
-		echo "set output \"$output.$GRAPH_EXT\"" >> plot_commands.gp
-		echo "set title 'Branch $output'" >> plot_commands.gp
-		echo "set xlabel 'Number of Threads'" >> plot_commands.gp
-		echo "set ylabel 'Running Time'" >> plot_commands.gp
-		echo -n "plot [1:] '$filename' using 1:2 $GRAPH_STYLE" >> plot_commands.gp
-		echo ", '$filename' with points" >> plot_commands.gp
-
-		gnuplot plot_commands.gp
-		mv $output.$GRAPH_EXT ../graphs/$output.$GRAPH_EXT
-
-		echo "Plotted $output.$GRAPH_EXT"
+		echo -n ", " >> plot_commands.gp
 	done
+
+	gnuplot plot_commands.gp
+	mv graph.$GRAPH_EXT ../graph.$GRAPH_EXT
+	echo "Plotted graph.$GRAPH_EXT"
 
 	cd ..
 	rm -rf test_files
@@ -150,4 +160,4 @@ case "$1" in
 	exit
 esac
 
-plot_all && echo "Done."
+plot_all $2 $3 $4 && echo "Done."
