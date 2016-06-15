@@ -164,3 +164,5 @@ case "$1" in
 esac
 
 plot_all $2 $3 $4 && echo "Done."
+
+git checkout master
