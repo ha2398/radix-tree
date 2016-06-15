@@ -18,7 +18,7 @@ set -e
 GRAPH_EXT="png"
 GNUPLOT_TERM="png"
 GRAPH_SIZE="1024,768"
-GRAPH_STYLE="smooth csplines"
+GRAPH_STYLE="lines"
 print_help()
 {
 	echo "Test and plot script for Radix Tree Implementation tests.\n"
@@ -62,17 +62,20 @@ test1()
 		rm -rf $filename.data
 		touch $filename.data
 
+		echo "Testing $filename..."
+
 		counter=1
 		while [ $counter -le $4 ]
 		do
 			echo -n "$counter\t" >> $filename.data
+			echo "Number of threads: $counter"
 
-			taskset -c 0-$((counter-1)) $file $1 $2 $3 $counter >> $filename.data 2> /dev/null 
+			taskset -c 0-$((counter-1)) $file $1 $2 $3 $counter >> $filename.data
 
 			counter=$((counter+1))
 		done
 
-		echo "Finished testing $filename"
+		echo "\nFinished testing $filename\n"
 	done
 
 	echo ""
@@ -104,7 +107,7 @@ plot_all()
 	do
 		branch=${file##./}
 		branch=${branch%.data}
-		echo -n "'$file' using 1:2 $GRAPH_STYLE title '$branch'" >> plot_commands.gp
+		echo -n "'$file' using 1:2 title \"$branch\" with $GRAPH_STYLE" >> plot_commands.gp
 
 		counter=$((counter+1))
 		if [ $counter -gt $number_of_files ]; then
