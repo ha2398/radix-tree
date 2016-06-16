@@ -27,7 +27,7 @@ radix_tree.o: radix_tree.c radix_tree.h
 
 .PHONY: clean
 clean:
-	rm -rf *.o *.a radix_test graph.* test_files
+	rm -rf *.o .out *.a radix_test graph.*
 
 # Test parameters (default)
 
