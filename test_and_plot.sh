@@ -32,21 +32,30 @@ get_test_files()
 	rm -rf test_files
 	mkdir test_files
 
-	git branch --list > branch_list.txt
+	git branch -a > temp.txt
+	sed '/->/d' temp.txt > branch_list.txt
+	cat branch_list.txt > temp.txt
+	sed '/remotes\/origin/!d' temp.txt > branch_list.txt
 
 	echo "Generating executable files...\n"
 
+	prefix1="  remotes/"
+	prefix2="remotes/origin/"
+
 	while read -r line
 	do
-		name=${line##* }
-		git checkout $name > /dev/null
-		make > /dev/null && echo "Generated test file $name"
-		mv radix_test ./test_files/$name	
+		branch=${line#$prefix1}
+		echo "[$branch]"
+		filename=${line##$prefix2}
+		echo "[$filename]"
+		git checkout $branch
+		make > /dev/null && echo "Generated test file $filename"
+		mv radix_test ./test_files/$filename
 	done < branch_list.txt
 
 	echo ""
 
-	rm branch_list.txt
+	rm temp.txt branch_list.txt
 	make clean > /dev/null
 }
 
@@ -126,6 +135,7 @@ plot_all()
 
 	echo ""
 }
+
 
 # Main #
 
