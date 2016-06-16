@@ -15,10 +15,15 @@ set -e
 # to one test function):
 #	1) Number of threads x Running Time
 
+# Plot parameters
+
 GRAPH_EXT="png"
 GNUPLOT_TERM="png"
 GRAPH_SIZE="1024,768"
 GRAPH_STYLE="lines"
+
+# Functions
+
 print_help()
 {
 	echo "Test and plot script for Radix Tree Implementation tests.\n"
@@ -33,19 +38,19 @@ get_test_files()
 	mkdir test_files
 
 	git branch -a > temp.txt
-	sed '/->/d' temp.txt > branch_list.txt
+	sed '/HEAD/d' temp.txt > branch_list.txt
 	cat branch_list.txt > temp.txt
 	sed '/remotes\/origin/!d' temp.txt > branch_list.txt
-
-	echo "Generating executable files...\n"
 
 	prefix1="  remotes/"
 	prefix2="remotes/origin/"
 
+	echo "Generating executable files...\n"
+
 	while read -r line
 	do
 		branch=${line#$prefix1}
-		filename=${line##$prefix2}
+		filename=${line#$prefix2}
 		git checkout $branch > /dev/null 2>&1
 		git pull > /dev/null 2>&1
 		make > /dev/null && echo "Generated test file $filename"
@@ -104,7 +109,6 @@ plot_all()
 
 	echo "set xlabel 'Number of Threads'" >> plot_commands.gp
 	echo "set ylabel 'Running Time (s)'" >> plot_commands.gp
-	echo "set xtics 1" >> plot_commands.gp
 
 	echo -n "plot [1:] " >> plot_commands.gp
 
@@ -113,7 +117,7 @@ plot_all()
 
 	for file in ./*.data
 	do
-		branch=${file##./}
+		branch=${file#./}
 		branch=${branch%.data}
 		echo -n "'$file' using 1:2 title \"$branch\" with $GRAPH_STYLE" >> plot_commands.gp
 
@@ -130,7 +134,6 @@ plot_all()
 	echo "Plotted graph.$GRAPH_EXT"
 
 	cd ..
-	rm -rf test_files
 
 	echo ""
 }
@@ -138,11 +141,11 @@ plot_all()
 
 # Main #
 
-if [ "$#" -ge 1 ] && [ "$1" = "help" ]; then
+if [ $# -ge 1 ] && [ "$1" = "help" ]; then
 	print_help
 fi
 
-if [ "$#" -lt 1 ]; then
+if [ $# -lt 1 ]; then
 	echo "Error. Please specify the type of graph to generate"
 	echo "Usage:\t$0 <type> <parameters>"
 	echo "<type>: Graph type [1]"
@@ -151,7 +154,7 @@ if [ "$#" -lt 1 ]; then
 	exit
 fi
 
-if [ "$1" -eq 1 ] && [ "$#" -lt 5 ]; then
+if [ $1 -eq 1 ] && [ $# -lt 5 ]; then
 	echo "Error. Insufficient number of parameters."
 	echo "For graph type $1, please use: $0 $1 <range> <keys> <tests> <max_threads>"
 	echo "\nFor help, use $0 help"
