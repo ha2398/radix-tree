@@ -13,7 +13,8 @@ set -e
 
 # Graphs to be generated (each graph type will correspond
 # to one test function):
-#	1) Number of threads x Running Time
+#	1) Number of Threads x Running Time
+#	2) Number of Threads x Throughput (Lookups/Execution Time)
 
 # Plot parameters
 
@@ -99,6 +100,44 @@ test1()
 	echo ""
 }
 
+test2()
+{
+	cd test_files
+
+	echo "Testing files...\n"
+
+	for file in ./*
+	do
+		filename=${file##./}
+		rm -rf $filename.data
+		touch $filename.data
+
+		echo "Testing $filename..."
+
+		counter=1
+		while [ $counter -le $4 ]
+		do
+			echo -n "$counter\t" >> $filename.data
+			echo "Number of threads: $counter"
+
+			thr_put=$(taskset -c 0-$((counter-1)) $file $1 $2 $3 $counter >> $filename.data)
+			thr_put=$(($3+throughput))
+
+			echo $thr_put >> $filename.data
+
+			if [ $counter -eq 1 ]; then
+				counter=$((counter*4))
+			else
+				counter=$((counter+4))
+			fi
+		done
+
+		echo "\nFinished testing $filename\n"
+	done
+
+	echo ""
+}
+
 plot_all()
 {
 	echo "Plotting graphs...\n"
@@ -109,11 +148,21 @@ plot_all()
 	echo -n "set terminal $GNUPLOT_TERM " >> plot_commands.gp
 	echo "size $GRAPH_SIZE" >> plot_commands.gp
 	echo "set output 'graph.$GRAPH_EXT'" >> plot_commands.gp
-	echo -n "set title \"Number of Threads x Running Time\\\n" >> plot_commands.gp
-	echo "RANGE: $1 KEYS: $2 TESTS: $3\"">> plot_commands.gp
 
-	echo "set xlabel 'Number of Threads'" >> plot_commands.gp
-	echo "set ylabel 'Running Time (s)'" >> plot_commands.gp
+	case "$1" in
+	"1") 
+		echo -n "set title \"Number of Threads x Running Time\\\n" >> plot_commands.gp
+		echo "RANGE: $2 KEYS: $3 TESTS: $4\"">> plot_commands.gp
+		echo "set xlabel 'Number of Threads'" >> plot_commands.gp
+		echo "set ylabel 'Running Time (s)'" >> plot_commands.gp
+		;;
+	"2")
+		echo -n "set title \"Number of Threads x Throughput\\\n" >> plot_commands.gp
+		echo "RANGE: $2 KEYS: $3 TESTS: $4\"">> plot_commands.gp
+		echo "set xlabel 'Number of Threads'" >> plot_commands.gp
+		echo "set ylabel 'Throughput (lookups/s)'" >> plot_commands.gp
+		;;
+	esac
 
 	echo -n "plot [1:] " >> plot_commands.gp
 
@@ -172,6 +221,9 @@ case "$1" in
 "1") 
 	test1 $2 $3 $4 $5 && echo "Done.\n"
 	;;
+"2")
+	test2 $2 $3 $4 $5 && echo "Done.\n"
+	;;
 *)
 	echo "Error. Unknown graph type."
 	echo "Graph types:"
@@ -180,4 +232,4 @@ case "$1" in
 	exit
 esac
 
-plot_all $2 $3 $4 && echo "Done."
+plot_all $1 $2 $3 $4 && echo "Done."
