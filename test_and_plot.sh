@@ -45,10 +45,9 @@ get_test_files()
 	while read -r line
 	do
 		branch=${line#$prefix1}
-		echo "[$branch]"
 		filename=${line##$prefix2}
-		echo "[$filename]"
-		git checkout $branch
+		git checkout $branch > /dev/null 2>&1
+		git pull > /dev/null 2>&1
 		make > /dev/null && echo "Generated test file $filename"
 		mv radix_test ./test_files/$filename
 	done < branch_list.txt
