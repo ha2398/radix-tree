@@ -86,7 +86,11 @@ test1()
 
 			taskset -c 0-$((counter-1)) $file $1 $2 $3 $counter >> $filename.data
 
-			counter=$((counter+1))
+			if [ $counter -eq 1 ]; then
+				counter=$((counter*4))
+			else
+				counter=$((counter+4))
+			fi
 		done
 
 		echo "\nFinished testing $filename\n"
