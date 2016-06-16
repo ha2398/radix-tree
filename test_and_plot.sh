@@ -99,7 +99,7 @@ plot_all()
 	echo -n "set terminal $GNUPLOT_TERM " >> plot_commands.gp
 	echo "size $GRAPH_SIZE" >> plot_commands.gp
 	echo "set output 'graph.$GRAPH_EXT'" >> plot_commands.gp
-	echo -n "set title \"Numer of Threads x Running Time\\\n" >> plot_commands.gp
+	echo -n "set title \"Number of Threads x Running Time\\\n" >> plot_commands.gp
 	echo "RANGE: $1 KEYS: $2 TESTS: $3\"">> plot_commands.gp
 
 	echo "set xlabel 'Number of Threads'" >> plot_commands.gp
@@ -174,4 +174,4 @@ esac
 
 plot_all $2 $3 $4 && echo "Done."
 
-git checkout master
+git checkout master > /dev/null 2>&1
