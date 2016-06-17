@@ -53,7 +53,7 @@ static void print_usage(char *file_name)
  */
 int main(int argc, char **argv)
 {
-	uint64_t lookup_time;
+	uint64_t lookup_time = 0;
 	struct timespec start, end;
 
 	int RANGE;
@@ -136,6 +136,9 @@ int main(int argc, char **argv)
 
 		clock_gettime(CLOCK_REALTIME, &end);
 
+		lookup_time += BILLION * (end.tv_sec - start.tv_sec) +
+			end.tv_nsec - start.tv_nsec;
+
 		free(items);
 
 		radix_tree_delete(&myTree);
@@ -148,9 +151,6 @@ int main(int argc, char **argv)
 	}
 
 	free(keys);
-
-	lookup_time = BILLION * (end.tv_sec - start.tv_sec) +
-		end.tv_nsec - start.tv_nsec;
 
 	printf("%llu\n", (long long unsigned int) lookup_time);
 	
