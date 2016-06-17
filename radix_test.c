@@ -3,9 +3,12 @@
  */
 
 #include "radix_tree.h"
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+
+#define BILLION 1E9
 
 /* Prints an error @message and stops execution */
 static void die_with_error(char *message)
@@ -50,8 +53,8 @@ static void print_usage(char *file_name)
  */
 int main(int argc, char **argv)
 {
-	clock_t marker;
-	double lookups_time = 0;
+	uint64_t lookup_time;
+	struct timespec start, end;
 
 	int RANGE;
 	unsigned long N_KEYS;
@@ -103,8 +106,6 @@ int main(int argc, char **argv)
 		for (i = 0; i < N_KEYS; i++)
 			keys[i] = rand() % key_max;
 
-		marker = clock();
-
 		/* testing find_alloc */
 		for (i = 0; i < N_KEYS; i++) {
 			temp = radix_tree_find_alloc(&myTree, keys[i],
@@ -120,13 +121,10 @@ int main(int argc, char **argv)
 			}
 		}
 
-		lookups_time += (double) (clock() - marker) / 
-				CLOCKS_PER_SEC;
-
 		for (i = 0; i < N_KEYS; i++)
 			keys[i] = rand() % key_max;
 
-		marker = clock();
+		clock_gettime(CLOCK_REALTIME, &start);
 
 		/* testing find */
 		for (i = 0; i < N_KEYS; i++) {
@@ -136,8 +134,7 @@ int main(int argc, char **argv)
 				err_flag = 2;
 		}
 
-		lookups_time += (double) (clock() - marker) / 
-				CLOCKS_PER_SEC;
+		clock_gettime(CLOCK_REALTIME, &end);
 
 		free(items);
 
@@ -152,7 +149,10 @@ int main(int argc, char **argv)
 
 	free(keys);
 
-	printf("%f\n", lookups_time);
+	lookup_time = BILLION * (end.tv_sec - start.tv_sec) +
+		end.tv_nsec - start.tv_nsec;
+
+	printf("%llu\n", (long long unsigned int) lookup_time);
 	
 	return 0;
 }

@@ -123,7 +123,7 @@ test2()
 			echo "Number of threads: $counter"
 
 			run_time=$(taskset -c 0-$((counter-1)) $file $1 $2 $3 $counter)
-			lookups=$(echo "$2 * $3" | bc)
+			lookups=$(echo "$2 * $3 * 2" | bc)
 			echo "$lookups / $run_time" | bc >> $filename.data
 
 			if [ $counter -eq 1 ]; then

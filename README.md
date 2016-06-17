@@ -17,6 +17,7 @@ Radix Tree implementation in C
 The test program receives as arguments the following values:
 
 master:	RANGE KEYS TESTS
+
 other branches:	RANGE KEYS TESTS THREADS
 
 RANGE -> Maximum number of tracked bits and radix to use in order to generate random trees in the tests.
@@ -45,15 +46,20 @@ This loop is repeated **TESTS** number of times.
 ### Types of errors
 
 The test can detect two kinds of errors:
+
 	1) Error in **radix_tree_find_alloc**
+
 		i) Key is already in the tree, but the function returns an address which differs from the actual key's location.
+
 		ii) Key is not present in the tree, but the function returns NULL.
+
 	2) Error in **radix_tree_find**
+
 		i) The function returns an address which differs from the key's location in the tree (which can be NULL, if the keys has not been inserted).
 
 ### Output
 
-The test file has as main goal asserting the correctness of the implementation. However, in order to compare the branches and their performances, it produces as output the total time spent during the lookups. For that, a variable of type clock_t (time.h) is created and it marks the beginning and end of the lookup sections of the code. The time spent in these sections is added and the final value is printed in *stdout*.
+The test file has as main goal asserting the correctness of the implementation. However, in order to compare the branches and their performances, it produces as output the total time spent during the lookups. For that, a variable of type clock_t (time.h) is created and it marks the beginning and end of the lookup section of the code. The time spent in this section is added and the final value is printed in *stdout*.
 
 ### Test script
 
@@ -73,5 +79,17 @@ The structure of the script is as follows:
 #### Types of Graphs
 
 Currently, these are the graphs supported by the script:
+
 	1) Number of Threads x Running Time (s)
+
 	2) Number of Threads x Throughput (Lookups/Execution Time)
+
+#### Graphs and Branches' Performance
+
+The very first observation to make regarding the performance of the branches, is that they all suffer from a decrease in performance when compared to master, which is sequential and therefore makes no use of the **pthread** library. This happens due to the cost of creating threads (**pthread_create**) and waiting for them to finish their work (**pthread_join**).
+
+Analyzing the running time, we see that two of the threads have a very similar (and bad) performace, **p_lock_level** and **p_lock_node**. The branch **p_lock_level** works with mutexes that lock the current level on which they are working in the tree. This is expected to be a low performance branch because, usually, the radix trees will not have a big height. The maximum height of the tree will then **limit** the number of threads than can be traversing the tree concurrently.
+
+For **p_lock_node**, the problem is that it has to acquire and release a mutex for every single node it traverses. The cost for doing this is very big, since the tree may have up to sum{from 1 to maximum height} of (1 ^ number of slots per node).
+
+Among the branches that provide synchronization through mutexes, the one with best performance is **p_lock_subtree**. This branch will acquire a lock for the subtree (of root node) about to be traversed. This protocol acquires way fewer mutexes than **p_lock_node**.
