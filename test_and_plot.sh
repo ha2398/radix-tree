@@ -22,6 +22,13 @@ GRAPH_EXT="png"
 GNUPLOT_TERM="png"
 GRAPH_SIZE="1024,768"
 GRAPH_STYLE="lines"
+TIME_UNIT="ns"
+FILE=$0
+GRAPH=$1
+RANGE=$2
+KEYS=$3
+TESTS=$4
+THREADS=$5
 
 # Functions
 
@@ -29,9 +36,9 @@ print_help()
 {
 	echo "Test and plot script for Radix Tree Implementation tests.\n"
 	echo "Graph Type 1:\tNumber of Threads x Running time."
-	echo "\t$0 1 <range> <keys> <tests> <max_threads>"
+	echo "\t$FILE 1 <range> <keys> <tests> <max_threads>"
 	echo "Graph Type 2:\tNumber of threads x Throughput"
-	echo "\t$0 2 <range> <keys> <tests> <max_threads>"
+	echo "\t$FILE 2 <range> <keys> <tests> <max_threads>"
 	exit
 }
 
@@ -82,12 +89,12 @@ test1()
 		echo "Testing $filename..."
 
 		counter=1
-		while [ $counter -le $4 ]
+		while [ $counter -le $THREADS ]
 		do
 			echo -n "$counter\t" >> $filename.data
 			echo "Number of threads: $counter"
 
-			taskset -c 0-$((counter-1)) $file $1 $2 $3 $counter >> $filename.data
+			taskset -c 0-$((counter-1)) $file $RANGE $KEYS $TESTS $counter >> $filename.data
 
 			if [ $counter -eq 1 ]; then
 				counter=$((counter*4))
@@ -117,13 +124,13 @@ test2()
 		echo "Testing $filename..."
 
 		counter=1
-		while [ $counter -le $4 ]
+		while [ $counter -le $THREADS ]
 		do
 			echo -n "$counter\t" >> $filename.data
 			echo "Number of threads: $counter"
 
-			run_time=$(taskset -c 0-$((counter-1)) $file $1 $2 $3 $counter)
-			lookups=$(echo "$2 * $3 * 2" | bc)
+			run_time=$(taskset -c 0-$((counter-1)) $file $RANGE $KEYS $TESTS $counter)
+			lookups=$(echo "$KEYS * $TESTS * $counter" | bc)
 			echo "$lookups / $run_time" | bc >> $filename.data
 
 			if [ $counter -eq 1 ]; then
@@ -150,18 +157,18 @@ plot_all()
 	echo "size $GRAPH_SIZE" >> plot_commands.gp
 	echo "set output 'graph.$GRAPH_EXT'" >> plot_commands.gp
 
-	case "$1" in
+	case "$GRAPH" in
 	"1") 
 		echo -n "set title \"Number of Threads x Running Time\\\n" >> plot_commands.gp
-		echo "RANGE: $2 KEYS: $3 TESTS: $4\"">> plot_commands.gp
+		echo "RANGE: $RANGE KEYS: $KEYS TESTS: $TESTS\"">> plot_commands.gp
 		echo "set xlabel 'Number of Threads'" >> plot_commands.gp
-		echo "set ylabel 'Running Time (s)'" >> plot_commands.gp
+		echo "set ylabel 'Running Time ($TIME_UNIT)'" >> plot_commands.gp
 		;;
 	"2")
 		echo -n "set title \"Number of Threads x Throughput\\\n" >> plot_commands.gp
-		echo "RANGE: $2 KEYS: $3 TESTS: $4\"">> plot_commands.gp
+		echo "RANGE: $RANGE KEYS: $KEYS TESTS: $TESTS\"">> plot_commands.gp
 		echo "set xlabel 'Number of Threads'" >> plot_commands.gp
-		echo "set ylabel 'Throughput (lookups/s)'" >> plot_commands.gp
+		echo "set ylabel 'Throughput (lookups/$TIME_UNIT)'" >> plot_commands.gp
 		;;
 	esac
 
@@ -196,45 +203,45 @@ plot_all()
 
 # Main #
 
-if [ $# -ge 1 ] && [ "$1" = "help" ]; then
+if [ $# -ge 1 ] && [ "$GRAPH" = "help" ]; then
 	print_help
 fi
 
 if [ $# -lt 1 ]; then
 	echo "Error. Please specify the type of graph to generate"
-	echo "\nFor help, use $0 help"
+	echo "\nFor help, use $FILE help"
 	exit
 fi
 
 if [ $1 -le 0 ]; then
 	echo "Error. Invalid type of graph."
-	echo "\nFor help, use $0 help"
+	echo "\nFor help, use $FILE help"
 	exit
 fi
 
 if [ $1 -le 2 ] && [ $# -lt 5 ]; then
 	echo "Error. Insufficient number of parameters."
-	echo "For graph type $1, please use: $0 $1 <range> <keys> <tests> <max_threads>"
-	echo "\nFor help, use $0 help"
+	echo "For graph type $1, please use: $FILE $GRAPH <range> <keys> <tests> <max_threads>"
+	echo "\nFor help, use $FILE help"
 	exit
 fi
 
 get_test_files && echo "Done.\n"
 
-case "$1" in
+case "$GRAPH" in
 "1") 
-	test1 $2 $3 $4 $5 && echo "Done.\n"
+	test1 && echo "Done.\n"
 	;;
 "2")
-	test2 $2 $3 $4 $5 && echo "Done.\n"
+	test2 && echo "Done.\n"
 	;;
 *)
 	echo "Error. Unknown graph type."
 	echo "Graph types:"
 	echo "[1]\tNumber of threads x Running Time"
 	echo "[2]\tNumber of threads x Throughput"
-	echo "\nFor help, use $0 help"
+	echo "\nFor help, use $FILE help"
 	exit
 esac
 
-plot_all $1 $2 $3 $4 && echo "Done."
+plot_all && echo "Done."
