@@ -103,7 +103,7 @@ test1()
 test2()
 {
 	cd test_files
-
+	
 	echo "Testing files...\n"
 
 	for file in ./*
@@ -120,10 +120,8 @@ test2()
 			echo -n "$counter\t" >> $filename.data
 			echo "Number of threads: $counter"
 
-			thr_put=$(taskset -c 0-$((counter-1)) $file $1 $2 $3 $counter >> $filename.data)
-			thr_put=$(($3+throughput))
-
-			echo $thr_put >> $filename.data
+			thr_put=$(taskset -c 0-$((counter-1)) $file $1 $2 $3 $counter)
+			echo "$2 / $thr_put " | bc >> $filename.data
 
 			if [ $counter -eq 1 ]; then
 				counter=$((counter*4))
