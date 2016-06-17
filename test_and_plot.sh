@@ -13,7 +13,7 @@ set -e
 
 # Graphs to be generated (each graph type will correspond
 # to one test function):
-#	1) Number of Threads x Running Time
+#	1) Number of Threads x Running Time (s)
 #	2) Number of Threads x Throughput (Lookups/Execution Time)
 
 # Plot parameters
@@ -30,6 +30,8 @@ print_help()
 	echo "Test and plot script for Radix Tree Implementation tests.\n"
 	echo "Graph Type 1:\tNumber of Threads x Running time."
 	echo "\t$0 1 <range> <keys> <tests> <max_threads>"
+	echo "Graph Type 2:\tNumber of threads x Throughput"
+	echo "\t$0 2 <range> <keys> <tests> <max_threads>"
 	exit
 }
 
@@ -103,7 +105,7 @@ test1()
 test2()
 {
 	cd test_files
-	
+
 	echo "Testing files...\n"
 
 	for file in ./*
@@ -120,8 +122,9 @@ test2()
 			echo -n "$counter\t" >> $filename.data
 			echo "Number of threads: $counter"
 
-			thr_put=$(taskset -c 0-$((counter-1)) $file $1 $2 $3 $counter)
-			echo "$2 / $thr_put " | bc >> $filename.data
+			run_time=$(taskset -c 0-$((counter-1)) $file $1 $2 $3 $counter)
+			lookups=$(echo "$2 * $3" | bc)
+			echo "$lookups / $run_time" | bc >> $filename.data
 
 			if [ $counter -eq 1 ]; then
 				counter=$((counter*4))
@@ -199,14 +202,17 @@ fi
 
 if [ $# -lt 1 ]; then
 	echo "Error. Please specify the type of graph to generate"
-	echo "Usage:\t$0 <type> <parameters>"
-	echo "<type>: Graph type [1]"
-	echo "<parameters>: Necessary parameters to generate the specified graph."
 	echo "\nFor help, use $0 help"
 	exit
 fi
 
-if [ $1 -eq 1 ] && [ $# -lt 5 ]; then
+if [ $1 -le 0 ]; then
+	echo "Error. Invalid type of graph."
+	echo "\nFor help, use $0 help"
+	exit
+fi
+
+if [ $1 -le 2 ] && [ $# -lt 5 ]; then
 	echo "Error. Insufficient number of parameters."
 	echo "For graph type $1, please use: $0 $1 <range> <keys> <tests> <max_threads>"
 	echo "\nFor help, use $0 help"
@@ -226,6 +232,7 @@ case "$1" in
 	echo "Error. Unknown graph type."
 	echo "Graph types:"
 	echo "[1]\tNumber of threads x Running Time"
+	echo "[2]\tNumber of threads x Throughput"
 	echo "\nFor help, use $0 help"
 	exit
 esac
