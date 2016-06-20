@@ -13,7 +13,7 @@ set -e
 
 # Graphs to be generated (each graph type will correspond
 # to one test function):
-#	1) Number of Threads x Running Time (s)
+#	1) Number of Threads x Running Time
 #	2) Number of Threads x Throughput (Lookups/Execution Time)
 
 # Plot parameters
@@ -221,7 +221,6 @@ fi
 
 if [ $1 -le 2 ] && [ $# -lt 5 ]; then
 	echo "Error. Insufficient number of parameters."
-	echo "For graph type $1, please use: $FILE $GRAPH <range> <keys> <tests> <max_threads>"
 	echo "\nFor help, use $FILE help"
 	exit
 fi

@@ -1,5 +1,5 @@
 /*
- * radix_test.c
+ * radix_test_seq.c
  */
 
 #include "radix_tree.h"

@@ -80,16 +80,25 @@ The structure of the script is as follows:
 
 Currently, these are the graphs supported by the script:
 
-	1) Number of Threads x Running Time (s)
+	1) Number of Threads x Running Time
 
 	2) Number of Threads x Throughput (Lookups/Execution Time)
 
 #### Graphs and Branches' Performance
 
-The very first observation to make regarding the performance of the branches, is that they all suffer from a decrease in performance when compared to master, which is sequential and therefore makes no use of the **pthread** library. This happens due to the cost of creating threads (**pthread_create**) and waiting for them to finish their work (**pthread_join**).
+The very first observation to make regarding the performance of the branches, is that they all, after a certain number of threads being used, suffer from a decrease in performance when compared to master, which is sequential and therefore makes no use of the **pthread** library. This happens due to the cost of creating threads (**pthread_create**) and waiting for them to finish their work (**pthread_join**). Also, depending on how many keys we want to lookup in the tree, the cost of managing (creating, joining) the threads can be higher than the time to actually perform the lookups.
 
-Analyzing the running time, we see that two of the threads have a very similar (and bad) performace, **p_lock_level** and **p_lock_node**. The branch **p_lock_level** works with mutexes that lock the current level on which they are working in the tree. This is expected to be a low performance branch because, usually, the radix trees will not have a big height. The maximum height of the tree will then **limit** the number of threads than can be traversing the tree concurrently.
+Analyzing the running time, we see that two of the threads have a very similar performace, **p_lock_level** and **p_lock_node**. The branch **p_lock_level** works with mutexes that lock the current level on which they are working in the tree. This is expected to be a low performance branch because, usually, the radix trees will not have a big height (tracked bits divided by radix). The maximum height of the tree will then **limit** the number of threads than can be traversing the tree concurrently.
 
-For **p_lock_node**, the problem is that it has to acquire and release a mutex for every single node it traverses. The cost for doing this is very big, since the tree may have up to sum{from 1 to maximum height} of (1 ^ number of slots per node).
+Running the test program for **p_lock_level** using perf, with **RANGE = 31, KEYS = 100000000, TESTS = 1 and THREADS = 32** (all the perf commands below are run with these paremeters) we can see that the main overhead for this branch is the lock of mutexes.
+
+
+
+
+For **p_lock_node**, the problem is that it has to acquire and release a mutex for every single node it traverses. The cost for doing this is very big, since the tree may have up to sum{from 1 to maximum height} of (1 ^ number of slots per node), which can be a very large number.
+
+
+
+
 
 Among the branches that provide synchronization through mutexes, the one with best performance is **p_lock_subtree**. This branch will acquire a lock for the subtree (of root node) about to be traversed. This protocol acquires way fewer mutexes than **p_lock_node**.
