@@ -18,6 +18,7 @@ static void **items; /* items[key[x]] = lookup for key[x] */
 static unsigned long *keys; /* stores randomly generated keys */
 static pthread_t *threads;
 static struct arg *t_args;
+static unsigned long key_max; /* maximum possible value for a key */
 
 /*
  * Struct arg defines all data needed by the threads to perform
@@ -80,13 +81,13 @@ static void *thread_find_alloc(void *thread_arg)
 
 static void *thread_find(void *thread_arg)
 {
-	struct arg *t_arg = thread_arg;
+	struct radix_tree *tree = thread_arg;
 
 	int i;
 	void *temp; /* result of tree lookups */
 
-	for (i = t_arg->start; i < t_arg->end; i++) {
-		temp = radix_tree_find(t_arg->tree, i);
+	for (i = 0; i < key_max; i++) {
+		temp = radix_tree_find(tree, i);
 
 		if (items[i] != temp) {
 			err_flag = 2;
@@ -147,7 +148,6 @@ int main(int argc, char **argv)
 	int bits;
 	int radix;
 	struct radix_tree myTree;
-	unsigned long key_max; /* maximum possible value for a key */
 
 	if (argc < 5) {
 		print_usage(argv[0]);
@@ -213,14 +213,9 @@ int main(int argc, char **argv)
 		clock_gettime(CLOCK_REALTIME, &start);
 
 		/* testing find */
-		for (i = 0; i < N_THREADS; i++) {
-			t_args[i].tree = &myTree;
-			t_args[i].start = i * thread_loops;
-			t_args[i].end = t_args[i].start + thread_loops;
-
+		for (i = 0; i < N_THREADS; i++)
 			pthread_create(&threads[i], NULL, thread_find,
-				       &t_args[i]);
-		}
+				&myTree);
 
 		for (i = 0; i < N_THREADS; i++)
 			pthread_join(threads[i], NULL);

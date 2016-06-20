@@ -93,7 +93,8 @@ clear:
 GRAPH = 1
 
 # Maximum number of tracked bits and radix to use in order to generate
-# random trees in the tests.
+# random trees in the tests. Also defines the numer of lookups, which is
+# 2 ^ RANGE
 RANGE = 8
 
 # Number of keys to be inserted in the trees for each test instance.
