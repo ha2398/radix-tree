@@ -154,7 +154,7 @@ def test2():
 				str(tree_range), str(keys), str(tests),
 				str(counter)])
 
-			lookups = keys * tests
+			lookups = (1 << tree_range) * tests
 			throughput = lookups / float(run_time)
 
 			datafile.write("{}\n".format(throughput))
@@ -218,8 +218,6 @@ def plot_all():
 
 	plot_cmds.close()
 	subp.call(["gnuplot", "plot_commands.gp"])
-	print(os.getcwd())
-	# sshutil.move("{}/graph.{}", "{}/../graph.{}".format(os.getcwd(), GRAPH_EXT, os.getcwd(), GRAPH_EXT))
 
 	print("Plotted graph.{}".format(GRAPH_EXT))
 	print("Done\n")

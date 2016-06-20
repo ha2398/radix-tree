@@ -86,11 +86,9 @@ static void *thread_find(void *thread_arg)
 	void *temp; /* result of tree lookups */
 
 	for (i = t_arg->start; i < t_arg->end; i++) {
-		unsigned long key = keys[i];
+		temp = radix_tree_find(t_arg->tree, i);
 
-		temp = radix_tree_find(t_arg->tree, key);
-
-		if (items[key] != temp) {
+		if (items[i] != temp) {
 			err_flag = 2;
 			break;
 		}
@@ -163,7 +161,7 @@ int main(int argc, char **argv)
 
 	threads = malloc(sizeof(*threads) * N_THREADS);
 	t_args = malloc(sizeof(*t_args) * N_THREADS);
-	unsigned long thread_loops = N_KEYS / N_THREADS;
+	unsigned long thread_loops;
 
 	keys = malloc(sizeof(*keys) * N_KEYS);
 
@@ -177,6 +175,8 @@ int main(int argc, char **argv)
 		bits = (rand() % RANGE) + 1;
 		key_max = ((1L << bits) - 1L);
 		radix = (rand() % RANGE) + 1;
+
+		thread_loops = key_max / N_THREADS;
 
 		fprintf(stderr, "Test %d\t", j);
 		fprintf(stderr, "TESTING TREE: BITS = %d, RADIX = %d\n",
@@ -209,9 +209,6 @@ int main(int argc, char **argv)
 			clean(&myTree);
 			return 0;
 		}
-
-		for (i = 0; i < N_KEYS; i++) /* generates random keys */
-			keys[i] = rand() % key_max;
 
 		clock_gettime(CLOCK_REALTIME, &start);
 

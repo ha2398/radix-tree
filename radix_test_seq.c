@@ -121,16 +121,13 @@ int main(int argc, char **argv)
 			}
 		}
 
-		for (i = 0; i < N_KEYS; i++)
-			keys[i] = rand() % key_max;
-
 		clock_gettime(CLOCK_REALTIME, &start);
 
 		/* testing find */
-		for (i = 0; i < N_KEYS; i++) {
-			temp = radix_tree_find(&myTree, keys[i]);
+		for (i = 0; i < key_max; i++) {
+			temp = radix_tree_find(&myTree, i);
 
-			if (items[keys[i]] != temp)
+			if (items[i] != temp)
 				err_flag = 2;
 		}
 
