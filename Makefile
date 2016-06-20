@@ -85,7 +85,7 @@ clean:
 
 .PHONY: clear
 clear:
-	rm -rf *.o *.a graph.* test_files
+	rm -rf *.o *.a graph.*
 
 # Test parameters (default)
 
@@ -107,4 +107,4 @@ THREADS = 4
 
 .PHONY: test_and_plot
 test_and_plot:
-	./test_and_plot.sh $(GRAPH) $(RANGE) $(KEYS) $(TESTS) $(THREADS)
+	./test_and_plot.py $(GRAPH) $(RANGE) $(KEYS) $(TESTS) $(THREADS)
