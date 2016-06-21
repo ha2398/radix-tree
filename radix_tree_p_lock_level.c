@@ -79,8 +79,7 @@ void *radix_tree_find_alloc(struct radix_tree *tree, unsigned long key,
 	while (levels_left) {
 		index = find_slot_index(key, levels_left, radix);
 
-		if (create)
-			pthread_mutex_lock(&locks[current_level]);
+		pthread_mutex_lock(&locks[current_level]);
 
 		next_slot = &current_node->slots[index];
 
@@ -95,11 +94,11 @@ void *radix_tree_find_alloc(struct radix_tree *tree, unsigned long key,
 			else
 				current_node = *next_slot;
 		} else {
+			pthread_mutex_unlock(&locks[current_level]);
 			return NULL;
 		}
 
-		if (create)
-			pthread_mutex_unlock(&locks[current_level]);
+		pthread_mutex_unlock(&locks[current_level]);
 
 		current_level++;
 		levels_left--;
@@ -107,16 +106,14 @@ void *radix_tree_find_alloc(struct radix_tree *tree, unsigned long key,
 
 	index = find_slot_index(key, levels_left, radix);
 
-	if (create)
-		pthread_mutex_lock(&locks[current_level]);
+	pthread_mutex_lock(&locks[current_level]);
 
 	next_slot = &current_node->slots[index];
 
 	if (!(*next_slot) && create)
 		*next_slot = create(key);
 
-	if (create)
-		pthread_mutex_unlock(&locks[current_level]);
+	pthread_mutex_unlock(&locks[current_level]);
 
 	return *next_slot;
 }
