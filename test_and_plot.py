@@ -157,7 +157,11 @@ def test2():
 				str(tree_range), str(keys), str(lookups),
 				str(tests), str(counter)])
 
-			num_lookups = lookups * tests * threads
+			if (f == "master"):
+				num_lookups = lookups * tests
+			else:
+				num_lookups = lookups * tests * counter
+
 			throughput = num_lookups / float(run_time)
 
 			datafile.write("{}\n".format(throughput))

@@ -18,6 +18,7 @@ static void **items; /* items[key] = lookup for key */
 static unsigned long **keys; /* stores randomly generated keys */
 static pthread_t *threads;
 static unsigned long N_LOOKUPS; /* number of lookups per thread */
+static unsigned long N_THREADS; /* number of threads to use for lookups */
 static struct radix_tree myTree;
 
 
@@ -66,8 +67,13 @@ static void *thread_find(void *thread_arg)
 /* Prints and error message and frees allocated memory */
 static void clean(struct radix_tree *t)
 {
+	int i;
+	
 	if (err_flag)
 		fprintf(stderr, "\n[Error number %d detected]\n", err_flag);
+
+	for (i = 0; i < N_THREADS; i++)
+		free(keys[i]);
 
 	free(keys);
 	free(items);
@@ -108,7 +114,6 @@ int main(int argc, char **argv)
 	unsigned long N_KEYS; /* number of inserted keys */
 	unsigned long N_TESTS; /* number of test instances per execution */
 	unsigned long LOOKUPS_RANGE; /* max key to be looked up on the tree */
-	unsigned long N_THREADS; /* number of threads to use for lookups */
 
 	int i, j, k;
 	int bits;
@@ -214,6 +219,9 @@ int main(int argc, char **argv)
 		free(items);
 		radix_tree_delete(&myTree);
 	}
+
+	for (i = 0; i < N_THREADS; i++)
+		free(keys[i]);
 
 	free(keys);
 	free(threads);
