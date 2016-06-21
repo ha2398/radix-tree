@@ -176,7 +176,7 @@ int main(int argc, char **argv)
 		key_max = ((1L << bits) - 1L);
 		radix = (rand() % RANGE) + 1;
 
-		thread_loops = key_max / N_THREADS;
+		thread_loops = N_KEYS / N_THREADS;
 
 		fprintf(stderr, "Test %d\t", j);
 		fprintf(stderr, "TESTING TREE: BITS = %d, RADIX = %d\n",
