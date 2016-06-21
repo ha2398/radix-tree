@@ -30,9 +30,11 @@ num_args = len(args)
 def print_help(args):
 	print("Test and plot script for Radix Tree Implementation tests.\n")
 	print("Graph Type 1:\tNumber of Threads x Running time.")
-	print("\t{} 1 <range> <keys> <tests> <max_threads>".format(filename))
+	print("\t{} 1 <tree_range> <keys> <lookups> <tests> "
+		"<max_threads>".format(filename))
 	print("\nGraph Type 2:\tNumber of threads x Throughput")
-	print("\t{} 2 <range> <keys> <tests> <max_threads>".format(filename))
+	print("\t{} 2 <tree_range> <keys> <lookups> <tests> "
+		"<max_threads>".format(filename))
 
 	sys.exit()
 
@@ -51,7 +53,7 @@ if (graph_type <= 0):
 	print("\nFor help, use {} help".format(filename))
 	sys.exit()
 
-if (graph_type <= 2 and num_args < 6):
+if (graph_type <= 2 and num_args < 7):
 	print("Error. Insufficient number of parameters.")
 	print("\nFor help, use {} help".format(filename))
 	sys.exit()
@@ -66,8 +68,9 @@ TIME_UNIT = "ns"
 
 tree_range = int(args[2])
 keys = int(args[3])
-tests = int(args[4])
-threads = int(args[5])
+lookups = int(args[4])
+tests = int(args[5])
+threads = int(args[6])
 
 # Functions
 
@@ -113,8 +116,8 @@ def test1():
 
 			output = subp.check_output(["taskset", "-c",
 				"0-{}".format(counter - 1), "./{}".format(f),
-				str(tree_range), str(keys), str(tests),
-				str(counter)])
+				str(tree_range), str(keys), str(lookups),
+				str(tests), str(counter)])
 
 			datafile.write("{}".format(output))
 
@@ -151,11 +154,11 @@ def test2():
 
 			run_time = subp.check_output(["taskset", "-c",
 				"0-{}".format(counter - 1), "./{}".format(f),
-				str(tree_range), str(keys), str(tests),
-				str(counter)])
+				str(tree_range), str(keys), str(lookups),
+				str(tests), str(counter)])
 
-			lookups = (1 << tree_range) * tests * threads
-			throughput = lookups / float(run_time)
+			num_lookups = lookups * tests * threads
+			throughput = num_lookups / float(run_time)
 
 			datafile.write("{}\n".format(throughput))
 

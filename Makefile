@@ -108,7 +108,10 @@ GRAPH = 1
 RANGE = 15
 
 # Number of keys to be inserted in the trees for each test instance.
-KEYS = 10000
+KEYS = 15000
+
+# Number of lookups to perform on the tree
+LOOKUPS = 30000
 
 # Number of test instances per program execution.
 TESTS = 1
@@ -118,4 +121,4 @@ THREADS = 4
 
 .PHONY: test_and_plot
 test_and_plot:
-	./test_and_plot.py $(GRAPH) $(RANGE) $(KEYS) $(TESTS) $(THREADS)
+	./test_and_plot.py $(GRAPH) $(RANGE) $(KEYS) $(LOOKUPS) $(TESTS) $(THREADS)
