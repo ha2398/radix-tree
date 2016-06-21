@@ -154,7 +154,7 @@ def test2():
 				str(tree_range), str(keys), str(tests),
 				str(counter)])
 
-			lookups = (1 << tree_range) * tests
+			lookups = (1 << tree_range) * tests * threads
 			throughput = lookups / float(run_time)
 
 			datafile.write("{}\n".format(throughput))
@@ -185,17 +185,19 @@ def plot_all():
 	plot_cmds.write("set output '{}/../graph.{}'\n".format(os.getcwd(),
 		GRAPH_EXT))
 
-	plot_cmds.write("set title \"Number of Threads x Running Time\\\n")
-	plot_cmds.write("RANGE: {} KEYS: {} TESTS: {}\"\n"
-		.format(tree_range, keys, tests))
-
 	if (graph_type == 1):
+		plot_cmds.write("set title \"Number of Threads x Running Time\\n")
+		plot_cmds.write("RANGE: {} KEYS: {} TESTS: {}\"\n"
+		.format(tree_range, keys, tests))
 		plot_cmds.write("set xlabel 'Number of Threads'\n")
 		plot_cmds.write("set ylabel 'Running Time ({})'\n".format(TIME_UNIT))
 	
-	if (graph_type ==2 ):
+	if (graph_type == 2):
+		plot_cmds.write("set title \"Number of Threads x Throughput\\n")
+		plot_cmds.write("RANGE: {} KEYS: {} TESTS: {}\"\n"
+		.format(tree_range, keys, tests))
 		plot_cmds.write("set xlabel 'Number of Threads'\n")
-		plot_cmds.write("set ylabel 'Throughput (lookups/{}'\n"
+		plot_cmds.write("set ylabel 'Throughput (lookups/{})'\n"
 			.format(TIME_UNIT))
 
 	plot_cmds.write("plot [1:] ")
