@@ -75,7 +75,7 @@ void *radix_tree_find_alloc(struct radix_tree *tree, unsigned long key,
 
 			if (!new)
 				die_with_error("failed to create new node.\n");
-			
+
 			*next_slot = new;
 			current_node = new;
 		} else {

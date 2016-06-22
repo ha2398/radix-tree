@@ -75,13 +75,13 @@ int main(int argc, char **argv)
 	if (argc < 5) {
 		print_usage(argv[0]);
 		return 0;
-	} else {
-		TREE_RANGE = atoi(argv[1]);
-		N_KEYS = atoi(argv[2]);
-		N_LOOKUPS = atoi(argv[3]);
-		N_TESTS = atoi(argv[4]);
-		LOOKUPS_RANGE = N_KEYS;
 	}
+
+	TREE_RANGE = atoi(argv[1]);
+	N_KEYS = atoi(argv[2]);
+	N_LOOKUPS = atoi(argv[3]);
+	N_TESTS = atoi(argv[4]);
+	LOOKUPS_RANGE = N_KEYS;
 
 	keys = malloc(sizeof(*keys) * N_LOOKUPS);
 
@@ -163,7 +163,7 @@ int main(int argc, char **argv)
 
 	free(keys);
 
-	printf("%llu\n", (long long unsigned int) lookup_time);
-	
+	printf("%" PRIu64 "\n", (unsigned long long int) lookup_time);
+
 	return 0;
 }

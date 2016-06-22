@@ -1,12 +1,25 @@
 /*
  * radix_test_prl_pln.c
  */
+#include <inttypes.h>
 #include <pthread.h>
 #include "radix_tree_pln.h"
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+
+typedef short bool;
+#define true 1
+#define false 0
+
+#ifndef cpu_relax
+#define cpu_relax() (asm volatile("rep; nop" ::: "memory"))
+#endif
+
+#ifndef ACCESS_ONCE
+#define ACCESS_ONCE(x) (*(volatile typeof(x) *)&(x))
+#endif
 
 #define BILLION 1E9
 
@@ -20,6 +33,9 @@ static pthread_t *threads;
 static unsigned long N_LOOKUPS; /* number of lookups per thread */
 static unsigned long N_THREADS; /* number of threads to use for lookups */
 static struct radix_tree myTree;
+
+static unsigned long n_ready_threads;
+static bool test_start;
 
 
 /* Prints an error @message and stops execution */
@@ -52,6 +68,11 @@ static void *thread_find(void *thread_arg)
 	i = *id;
 	void *temp; /* result of tree lookups */
 
+	__sync_fetch_and_add(&n_ready_threads, 1);
+
+	while (!ACCESS_ONCE(test_start))
+		cpu_relax();
+
 	for (j = 0; j < N_LOOKUPS; j++) {
 		temp = radix_tree_find(&myTree, keys[i][j]);
 
@@ -68,7 +89,7 @@ static void *thread_find(void *thread_arg)
 static void clean(struct radix_tree *t)
 {
 	int i;
-	
+
 	if (err_flag)
 		fprintf(stderr, "\n[Error number %d detected]\n", err_flag);
 
@@ -124,14 +145,13 @@ int main(int argc, char **argv)
 	if (argc < 6) {
 		print_usage(argv[0]);
 		return 0;
-	} else {
-		TREE_RANGE = atoi(argv[1]);
-		N_KEYS = atoi(argv[2]);
-		N_LOOKUPS = atoi(argv[3]);
-		N_TESTS = atoi(argv[4]);
-		N_THREADS = atoi(argv[5]);
-		LOOKUPS_RANGE = N_KEYS;
-	}
+
+	TREE_RANGE = atoi(argv[1]);
+	N_KEYS = atoi(argv[2]);
+	N_LOOKUPS = atoi(argv[3]);
+	N_TESTS = atoi(argv[4]);
+	N_THREADS = atoi(argv[5]);
+	LOOKUPS_RANGE = N_KEYS;
 
 	threads = malloc(sizeof(*threads) * N_THREADS);
 	if (!threads)
@@ -152,6 +172,9 @@ int main(int argc, char **argv)
 
 	/* test loop */
 	for (j = 0; j < N_TESTS; j++) {
+		n_ready_threads = 0;
+		test_start = false;
+
 		bits = (rand() % TREE_RANGE) + 1;
 		radix = (rand() % TREE_RANGE) + 1;
 
@@ -194,12 +217,16 @@ int main(int argc, char **argv)
 		for (i = 0; i < N_THREADS; i++)
 			ids[i] = i;
 
-		clock_gettime(CLOCK_REALTIME, &start);
-
 		/* testing find */
 		for (i = 0; i < N_THREADS; i++)
 			pthread_create(&threads[i], NULL, thread_find,
 				&ids[i]);
+
+		while (ACCESS_ONCE(n_ready_threads) != N_THREADS)
+			cpu_relax();
+
+		test_start = true;
+		clock_gettime(CLOCK_REALTIME, &start);
 
 		for (i = 0; i < N_THREADS; i++)
 			pthread_join(threads[i], NULL);
@@ -226,7 +253,7 @@ int main(int argc, char **argv)
 	free(keys);
 	free(threads);
 
-	printf("%llu\n", (long long unsigned int) lookup_time);
+	printf("%" PRIu64 "\n", (unsigned long long int) lookup_time);
 
 	return 0;
 }

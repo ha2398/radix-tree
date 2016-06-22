@@ -83,7 +83,7 @@ libradixtree_$(PLN).a: radix_tree_$(PLN).o
 radix_tree_$(PLN).o: radix_tree_$(PLN).c radix_tree_pln.h
 	$(CC) -c $(CFLAGS) radix_tree_$(PLN).c
 
-radix_test_prl_pln.o: radix_test_prl.c radix_tree_pln.h
+radix_test_prl_pln.o: radix_test_prl_pln.c radix_tree_pln.h
 	$(CC) -c $(CFLAGS) radix_test_prl_pln.c
 
 radix_test_prl.o: radix_test_prl.c radix_tree.h

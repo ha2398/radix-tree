@@ -12,7 +12,7 @@
 #endif
 
 /*
- * Global variables 
+ * Global variables
  */
 static pthread_mutex_t *locks;
 
@@ -41,7 +41,7 @@ void radix_tree_init(struct radix_tree *tree, int bits, int radix)
 	tree->max_height = DIV_ROUND_UP(bits, radix);
 
 	tree->node = calloc(sizeof(struct radix_node) +
-		     		  (n_slots * sizeof(void *)), 1);
+		(n_slots * sizeof(void *)), 1);
 
 	if (!tree->node)
 		die_with_error("failed to create new node.\n");
@@ -89,7 +89,7 @@ void *radix_tree_find_alloc(struct radix_tree *tree, unsigned long key,
 			current_node = *next_slot;
 		} else if (create) {
 			*next_slot = calloc(sizeof(struct radix_node) +
-		     		  	   (n_slots * sizeof(void *)), 1);
+				(n_slots * sizeof(void *)), 1);
 
 			if (!*next_slot)
 				die_with_error("failed to create new node.\n");

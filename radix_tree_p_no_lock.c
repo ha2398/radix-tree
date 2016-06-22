@@ -71,7 +71,7 @@ void *radix_tree_find_alloc(struct radix_tree *tree, unsigned long key,
 
 		next_slot = &current_node->slots[index];
 
-	 retry:
+retry:
 		slot = ACCESS_ONCE(*next_slot);
 
 		if (slot) {

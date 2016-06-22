@@ -83,7 +83,11 @@ def get_test_files():
 
 	shutil.rmtree("{}/test_files".format(os.getcwd()), ignore_errors = True)
 	subp.call(["mkdir", "test_files"])
-	subp.call(["make", "all", "clear"])
+	error = subp.call(["make", "all", "clear"])
+
+	if (error != 0):
+		print("Compilation error. Aborting.")
+		sys.exit()
 
 	execs = ["master", "p_lock_level", "p_lock_node", "p_no_lock",
 		 "p_lock_subtree"]
@@ -198,7 +202,7 @@ def plot_all():
 		.format(tree_range, keys, tests))
 		plot_cmds.write("set xlabel 'Number of Threads'\n")
 		plot_cmds.write("set ylabel 'Running Time ({})'\n".format(TIME_UNIT))
-	
+
 	if (graph_type == 2):
 		plot_cmds.write("set title \"Number of Threads x Throughput\\n")
 		plot_cmds.write("RANGE: {} KEYS: {} TESTS: {}\"\n"
