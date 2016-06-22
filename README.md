@@ -93,110 +93,78 @@ Analyzing the running time, we see that two of the threads have a very similar p
 
 Running the test program for **p_lock_level** using perf, with **RANGE = 31, KEYS = 5000000, LOOKUPS = 10000000, TESTS = 1 and THREADS = 32** (all the perf commands below are run with these paremeters) we can see that the main overhead for this branch is the lock of mutexes.
 
-  Overhead       Command       Shared Object                                       Symbol
+    Overhead  Command           Shared      Object     Symbol
 
-  ........  ............  ..................  ...........................................
- 
     17.35%  p_lock_level  [kernel.kallsyms]   [k] _raw_spin_lock                
-
-    16.75%  p_lock_level  libpthread-2.19.so  [.] pthread_mutex_lock                  
-
-    10.29%  p_lock_level  libpthread-2.19.so  [.] pthread_mutex_unlock                  
-
+    16.75%  p_lock_level  libpthread-2.19.so  [.] pthread_mutex_lock                
+    10.29%  p_lock_level  libpthread-2.19.so  [.] pthread_mutex_unlock              
      8.92%  p_lock_level  p_lock_level        [.] thread_find        
-
      5.47%  p_lock_level  libpthread-2.19.so  [.] __lll_lock_wait             
-
      3.95%  p_lock_level  [kernel.kallsyms]   [k] futex_wait_setup            
-
      3.20%  p_lock_level  [kernel.kallsyms]   [k] futex_wake            
-
      2.95%  p_lock_level  p_lock_level        [.] radix_tree_find_alloc
-
      2.23%  p_lock_level  [kernel.kallsyms]   [k] get_futex_value_locked
-
      1.95%  p_lock_level  [kernel.kallsyms]   [k] get_futex_key_refs.isra.13
-
      1.95%  p_lock_level  [kernel.kallsyms]   [k] system_call
-
      1.90%  p_lock_level  [kernel.kallsyms]   [k] hash_futex
-
      1.80%  p_lock_level  [kernel.kallsyms]   [k] do_futex
-
      1.62%  p_lock_level  [kernel.kallsyms]   [k] get_futex_key
-
      1.53%  p_lock_level  p_lock_level        [.] main 
-
      1.36%  p_lock_level  [kernel.kallsyms]   [k] system_call_after_swapgs 
-
      1.35%  p_lock_level  libpthread-2.19.so  [.] __lll_unlock_wake   
-
      1.08%  p_lock_level  [kernel.kallsyms]   [k] futex_wait                        
 
 For **p_lock_node**, the problem is that it has to acquire and release a mutex for every single node it traverses. The cost for doing this is very expensive, since the tree may have up to sum{from 1 to maximum height} of (1 ^ number of slots per node), which can be a very large number.
 
-  Overhead      Command       Shared Object                                      Symbol
-
-  ........  ...........  ..................  ..........................................
+    Overhead  Command           Shared      Object     Symbol
 
     21.87%  p_lock_node  [kernel.kallsyms]   [k] _raw_spin_lock              
-
     13.59%  p_lock_node  p_lock_node         [.] thread_find 
-
     13.48%  p_lock_node  libpthread-2.19.so  [.] pthread_mutex_lock 
-
      6.64%  p_lock_node  libpthread-2.19.so  [.] pthread_mutex_unlock
-
      4.44%  p_lock_node  libpthread-2.19.so  [.] __lll_lock_wait  
-
      4.16%  p_lock_node  [kernel.kallsyms]   [k] futex_wait_setup 
-
      3.15%  p_lock_node  p_lock_node         [.] radix_tree_find_alloc 
-
      3.04%  p_lock_node  [kernel.kallsyms]   [k] futex_wake 
-
      2.05%  p_lock_node  [kernel.kallsyms]   [k] get_futex_value_locked    
-
      2.03%  p_lock_node  p_lock_node         [.] main       
-
      1.79%  p_lock_node  [kernel.kallsyms]   [k] get_futex_key_refs.isra.13    
-
      1.75%  p_lock_node  [kernel.kallsyms]   [k] system_call    
-
      1.72%  p_lock_node  [kernel.kallsyms]   [k] hash_futex   
-
      1.48%  p_lock_node  [kernel.kallsyms]   [k] get_futex_key  
-
      1.27%  p_lock_node  [kernel.kallsyms]   [k] system_call_after_swapgs 
-
      1.25%  p_lock_node  [kernel.kallsyms]   [k] do_futex   
-
      1.25%  p_lock_node  p_lock_node         [.] find_slot_index 
-
      1.16%  p_lock_node  libpthread-2.19.so  [.] __lll_unlock_wake 
-
-     1.07%  p_lock_node  [kernel.kallsyms]   [k] futex_wait                            
+     1.07%  p_lock_node  [kernel.kallsyms]   [k] futex_wait
 
 Among the implementations that provide synchronization through mutexes, the one with best performance is **p_lock_subtree**. This implementation acquires a lock for the subtree (of root node) about to be traversed. This protocol acquires way fewer mutexes than **p_lock_node**.
 
-  Overhead         Command       Shared Object                                      Symbol
-
-  ........  ..............  ..................  ..........................................
+    Overhead  Command           Shared        Object   Symbol
  
     37.47%  p_lock_subtree  p_lock_subtree      [.] thread_find 
-
     21.47%  p_lock_subtree  libpthread-2.19.so  [.] pthread_mutex_lock   
-
     13.07%  p_lock_subtree  p_lock_subtree      [.] radix_tree_find_alloc  
-
      8.15%  p_lock_subtree  libpthread-2.19.so  [.] pthread_mutex_unlock    
-
      6.33%  p_lock_subtree  p_lock_subtree      [.] main   
-
      4.85%  p_lock_subtree  p_lock_subtree      [.] find_slot_index  
-
      1.42%  p_lock_subtree  libc-2.19.so        [.] __random_r  
-
      1.09%  p_lock_subtree  libc-2.19.so        [.] __random  
 
-                   
+Finally, the parallel approach **p_no_lock** gets rid of the use of mutexes (and all the cost that comes with it for locking and unlocking mutexes) by exploring atomic operations, namely the macro **ACCESS_ONCE** and the GCC builtin function **__sync_bool_compare_and_swap**. These operations will allow the code to keep synchronization between threads and do not rely on the use of mutexes. 
+
+    Overhead  Command    Shared          Object    Symbol
+
+    60.24%  p_no_lock  p_no_lock           [.] thread_find                            
+    19.36%  p_no_lock  p_no_lock           [.] radix_tree_find_alloc                  
+     9.05%  p_no_lock  p_no_lock           [.] main                                   
+     4.51%  p_no_lock  p_no_lock           [.] find_slot_index                        
+     1.94%  p_no_lock  libc-2.19.so        [.] __random_r                             
+     1.71%  p_no_lock  libc-2.19.so        [.] __random                               
+     1.34%  p_no_lock  p_no_lock           [.] radix_tree_find
+
+We can see that there is a gain in performance caused by the absence of operations of locking and unlocking mutexes and the implementation spends more time doing the actual work we want to benchmark (thread_find).
+
+Additionally, we can see in the graph below the relation that compares the throughput (number of lookups/total time spent on lookups) for all the implementations.
+
+![Graph 1](https://s31.postimg.org/z0pc5mwnv/graph3.png)
