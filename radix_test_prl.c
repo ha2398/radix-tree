@@ -14,7 +14,7 @@ typedef short bool;
 #define false 0
 
 #ifndef cpu_relax
-#define cpu_relax() (asm volatile("rep; nop" ::: "memory"))
+#define cpu_relax() asm volatile("rep; nop" ::: "memory")
 #endif
 
 #ifndef ACCESS_ONCE
@@ -145,6 +145,7 @@ int main(int argc, char **argv)
 	if (argc < 6) {
 		print_usage(argv[0]);
 		return 0;
+	}
 
 	TREE_RANGE = atoi(argv[1]);
 	N_KEYS = atoi(argv[2]);
@@ -253,7 +254,7 @@ int main(int argc, char **argv)
 	free(keys);
 	free(threads);
 
-	printf("%" PRIu64 "\n", (unsigned long long int) lookup_time);
+	printf("%llu\n", (unsigned long long int) lookup_time);
 
 	return 0;
 }

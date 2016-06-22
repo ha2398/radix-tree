@@ -163,7 +163,7 @@ int main(int argc, char **argv)
 
 	free(keys);
 
-	printf("%" PRIu64 "\n", (unsigned long long int) lookup_time);
+	printf("%llu\n", (unsigned long long int) lookup_time);
 
 	return 0;
 }
