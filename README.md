@@ -167,10 +167,10 @@ We can see that there is a gain in performance caused by the absence of operatio
 
 Additionally, we can see in the graph below the relation that compares the throughput (number of lookups/total time spent on lookups) for all the implementations.
 
-Throughput x Number of Threads
+**Number of Threads x Throughput**
 
 ![Graph 1](https://s31.postimg.org/4vn3f7nh7/graph5.png)
 
-Running time x Number of Threads
+**Number of Threads x Running Time**
 
 ![Graph 2](https://s31.postimg.org/rqrd3miez/graph4.png)
