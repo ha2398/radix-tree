@@ -11,7 +11,7 @@ CFLAGS = -g -Wall -O2 $(INCLUDES)
 LDFLAGS = -g -L.
 
 # Libraries
-LDLIBS = -pthread
+LDLIBS = -pthread -lrt
 
 # Executable files
 EXECS = master p_lockless p_lock_subtree p_lock_level p_lock_node
