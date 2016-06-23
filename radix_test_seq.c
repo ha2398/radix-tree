@@ -57,11 +57,11 @@ int main(int argc, char **argv)
 	uint64_t lookup_time = 0;
 	struct timespec start, end;
 
-	int TREE_RANGE; /* maximum number of tracked bits and radix */
-	unsigned long N_KEYS; /* number of inserted keys */
-	unsigned long N_TESTS; /* number of test instances per execution */
-	unsigned long N_LOOKUPS; /* number of lookups per thread */
-	unsigned long LOOKUPS_RANGE; /* max key to be looked up on the tree */
+	int tree_range; /* maximum number of tracked bits and radix */
+	unsigned long n_keys; /* number of inserted keys */
+	unsigned long n_tests; /* number of test instances per execution */
+	unsigned long n_lookups; /* number of lookups per thread */
+	unsigned long lookups_range; /* max key to be looked up on the tree */
 
 	int i, j;
 	int bits;
@@ -77,13 +77,13 @@ int main(int argc, char **argv)
 		return 0;
 	}
 
-	TREE_RANGE = atoi(argv[1]);
-	N_KEYS = atoi(argv[2]);
-	N_LOOKUPS = atoi(argv[3]);
-	N_TESTS = atoi(argv[4]);
-	LOOKUPS_RANGE = N_KEYS;
+	tree_range = atoi(argv[1]);
+	n_keys = atoi(argv[2]);
+	n_lookups = atoi(argv[3]);
+	n_tests = atoi(argv[4]);
+	lookups_range = n_keys;
 
-	keys = malloc(sizeof(*keys) * N_LOOKUPS);
+	keys = malloc(sizeof(*keys) * n_lookups);
 
 	if (!keys)
 		die_with_error("failed to allocate keys array.\n");
@@ -91,15 +91,15 @@ int main(int argc, char **argv)
 	srand(0);
 
 	/* test loop */
-	for (j = 0; j < N_TESTS; j++) {
-		bits = (rand() % TREE_RANGE) + 1;
-		radix = (rand() % TREE_RANGE) + 1;
+	for (j = 0; j < n_tests; j++) {
+		bits = (rand() % tree_range) + 1;
+		radix = (rand() % tree_range) + 1;
 
 		fprintf(stderr, "Test %d\t", j);
 		fprintf(stderr, "TESTING TREE: BITS = %d, RADIX = %d\n",
 			bits, radix);
 
-		items = calloc(N_KEYS, sizeof(*items));
+		items = calloc(n_keys, sizeof(*items));
 
 		if (!items)
 			die_with_error("failed to allocate items array.\n");
@@ -107,7 +107,7 @@ int main(int argc, char **argv)
 		radix_tree_init(&myTree, bits, radix);
 
 		/* testing find_alloc */
-		for (i = 0; i < N_KEYS; i++) {
+		for (i = 0; i < n_keys; i++) {
 			temp = radix_tree_find_alloc(&myTree, i, create);
 
 			if (items[i]) {
@@ -131,13 +131,13 @@ int main(int argc, char **argv)
 		}
 
 		/* generates random keys to lookup */
-		for (i = 0; i < N_LOOKUPS; i++)
-			keys[i] = rand() % LOOKUPS_RANGE;
+		for (i = 0; i < n_lookups; i++)
+			keys[i] = rand() % lookups_range;
 
 		clock_gettime(CLOCK_REALTIME, &start);
 
 		/* testing find */
-		for (i = 0; i < N_LOOKUPS; i++) {
+		for (i = 0; i < n_lookups; i++) {
 			temp = radix_tree_find(&myTree, keys[i]);
 
 			if (items[keys[i]] != temp)

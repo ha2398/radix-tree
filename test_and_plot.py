@@ -60,11 +60,11 @@ if (graph_type <= 2 and num_args < 7):
 
 # Parameters
 
-GRAPH_EXT = "png"
-GNUPLOT_TERM = "png"
-GRAPH_SIZE = "1024,768"
-GRAPH_STYLE = "lines"
-TIME_UNIT = "ns"
+graph_ext = "png"
+gnuplot_term = "png"
+graph_size = "1024,768"
+graph_style = "lines"
+time_unit = "ns"
 
 tree_range = int(args[2])
 keys = int(args[3])
@@ -191,17 +191,17 @@ def plot_all():
 
 	plot_cmds = open("plot_commands.gp", 'w')
 
-	plot_cmds.write("set terminal {} ".format(GNUPLOT_TERM))
-	plot_cmds.write("size {}\n".format(GRAPH_SIZE))
+	plot_cmds.write("set terminal {} ".format(gnuplot_term))
+	plot_cmds.write("size {}\n".format(graph_size))
 	plot_cmds.write("set output '{}/../graph.{}'\n".format(os.getcwd(),
-		GRAPH_EXT))
+		graph_ext))
 
 	if (graph_type == 1):
 		plot_cmds.write("set title \"Number of Threads x Running Time\\n")
 		plot_cmds.write("RANGE: {} KEYS: {} LOOKUPS: {} TESTS: {}\"\n"
 		.format(tree_range, keys, lookups, tests))
 		plot_cmds.write("set xlabel 'Number of Threads'\n")
-		plot_cmds.write("set ylabel 'Running Time ({})'\n".format(TIME_UNIT))
+		plot_cmds.write("set ylabel 'Running Time ({})'\n".format(time_unit))
 
 	if (graph_type == 2):
 		plot_cmds.write("set title \"Number of Threads x Throughput\\n")
@@ -209,7 +209,7 @@ def plot_all():
 		.format(tree_range, keys, lookups, tests))
 		plot_cmds.write("set xlabel 'Number of Threads'\n")
 		plot_cmds.write("set ylabel 'Throughput (lookups/{})'\n"
-			.format(TIME_UNIT))
+			.format(time_unit))
 
 	plot_cmds.write("plot [1:] ")
 
@@ -221,7 +221,7 @@ def plot_all():
 			f_name = f.replace(".data", "")
 
 			plot_cmds.write("'{}' using 1:2 title \"{}\" with {}"
-				.format(f, f_name, GRAPH_STYLE))
+				.format(f, f_name, graph_style))
 
 			counter = counter + 1
 			if (counter > num_files):
@@ -232,7 +232,7 @@ def plot_all():
 	plot_cmds.close()
 	subp.call(["gnuplot", "plot_commands.gp"])
 
-	print("Plotted graph.{}".format(GRAPH_EXT))
+	print("Plotted graph.{}".format(graph_ext))
 	print("Done\n")
 
 
