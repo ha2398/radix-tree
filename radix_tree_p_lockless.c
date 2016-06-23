@@ -1,5 +1,5 @@
 /*
- * radix_tree_p_no_lock.c
+ * radix_tree_p_lockless.c
  */
 
 #include "radix_tree.h"

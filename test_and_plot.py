@@ -89,7 +89,7 @@ def get_test_files():
 		print("Compilation error. Aborting.")
 		sys.exit()
 
-	execs = ["master", "p_lock_level", "p_lock_node", "p_no_lock",
+	execs = ["master", "p_lock_level", "p_lock_node", "p_lockless",
 		 "p_lock_subtree"]
 
 	for f in execs:

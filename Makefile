@@ -14,11 +14,11 @@ LDFLAGS = -g -L.
 LDLIBS = -pthread
 
 # Executable files
-EXECS = master p_no_lock p_lock_subtree p_lock_level p_lock_node
+EXECS = master p_lockless p_lock_subtree p_lock_level p_lock_node
 
 # File names
 MST = master
-PNL = p_no_lock
+PNL = p_lockless
 PLS = p_lock_subtree
 PLL = p_lock_level
 PLN = p_lock_node
@@ -39,7 +39,7 @@ radix_tree_$(MST).o: radix_tree_$(MST).c radix_tree.h
 radix_test_seq.o: radix_test_seq.c radix_tree.h
 	$(CC) -c $(CFLAGS) radix_test_seq.c
 
-# p_no_lock
+# p_lockless
 $(PNL): radix_test_prl.o libradixtree_$(PNL).a
 	$(CC) -o $(PNL) $(LDFLAGS) radix_test_prl.o -lradixtree_$(PNL) $(LDLIBS)
 

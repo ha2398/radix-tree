@@ -151,17 +151,17 @@ Among the implementations that provide synchronization through mutexes, the one 
      1.42%  p_lock_subtree  libc-2.19.so        [.] __random_r  
      1.09%  p_lock_subtree  libc-2.19.so        [.] __random  
 
-Finally, the parallel approach **p_no_lock** gets rid of the use of mutexes (and all the cost that comes with it for locking and unlocking mutexes) by exploring atomic operations, namely the macro [ACCESS_ONCE](https://lwn.net/Articles/508991/) and the GCC built-in function [__sync_bool_compare_and_swap](https://gcc.gnu.org/onlinedocs/gcc-4.4.3/gcc/Atomic-Builtins.html). These operations will allow the code to keep synchronization between threads and do not rely on the use of mutexes. 
+Finally, the parallel approach **p_lockless** gets rid of the use of mutexes (and all the cost that comes with it for locking and unlocking mutexes) by exploring atomic operations, namely the macro [ACCESS_ONCE](https://lwn.net/Articles/508991/) and the GCC built-in function [__sync_bool_compare_and_swap](https://gcc.gnu.org/onlinedocs/gcc-4.4.3/gcc/Atomic-Builtins.html). These operations will allow the code to keep synchronization between threads and do not rely on the use of mutexes. 
 
     Overhead  Command    Shared          Object    Symbol
 
-    60.24%  p_no_lock  p_no_lock           [.] thread_find                            
-    19.36%  p_no_lock  p_no_lock           [.] radix_tree_find_alloc                  
-     9.05%  p_no_lock  p_no_lock           [.] main                                   
-     4.51%  p_no_lock  p_no_lock           [.] find_slot_index                        
-     1.94%  p_no_lock  libc-2.19.so        [.] __random_r                             
-     1.71%  p_no_lock  libc-2.19.so        [.] __random                               
-     1.34%  p_no_lock  p_no_lock           [.] radix_tree_find
+    60.24%  p_lockless  p_lockless           [.] thread_find                            
+    19.36%  p_lockless  p_lockless           [.] radix_tree_find_alloc                  
+     9.05%  p_lockless  p_lockless           [.] main                                   
+     4.51%  p_lockless  p_lockless           [.] find_slot_index                        
+     1.94%  p_lockless  libc-2.19.so        [.] __random_r                             
+     1.71%  p_lockless  libc-2.19.so        [.] __random                               
+     1.34%  p_lockless  p_lockless           [.] radix_tree_find
 
 We can see that there is a gain in performance caused by the absence of operations of locking and unlocking mutexes and the implementation spends more time doing the actual work we want to benchmark (thread_find).
 
