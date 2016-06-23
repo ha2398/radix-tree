@@ -198,15 +198,15 @@ def plot_all():
 
 	if (graph_type == 1):
 		plot_cmds.write("set title \"Number of Threads x Running Time\\n")
-		plot_cmds.write("RANGE: {} KEYS: {} TESTS: {}\"\n"
-		.format(tree_range, keys, tests))
+		plot_cmds.write("RANGE: {} KEYS: {} LOOKUPS: {} TESTS: {}\"\n"
+		.format(tree_range, keys, lookups, tests))
 		plot_cmds.write("set xlabel 'Number of Threads'\n")
 		plot_cmds.write("set ylabel 'Running Time ({})'\n".format(TIME_UNIT))
 
 	if (graph_type == 2):
 		plot_cmds.write("set title \"Number of Threads x Throughput\\n")
-		plot_cmds.write("RANGE: {} KEYS: {} TESTS: {}\"\n"
-		.format(tree_range, keys, tests))
+		plot_cmds.write("RANGE: {} KEYS: {} LOOKUPS: {} TESTS: {}\"\n"
+		.format(tree_range, keys, lookups, tests))
 		plot_cmds.write("set xlabel 'Number of Threads'\n")
 		plot_cmds.write("set ylabel 'Throughput (lookups/{})'\n"
 			.format(TIME_UNIT))
