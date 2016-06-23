@@ -89,9 +89,9 @@ Currently, these are the graphs supported by the script:
 
 The very first observation to make regarding the performance of the implementations, is that they all, after a certain number of threads being used, suffer from a decrease in performance when compared to master, which is sequential and therefore makes no use of the **pthread** library. This happens due to the cost of creating threads (**pthread_create**) and waiting for them to finish their work (**pthread_join**). Also, depending on how many keys we want to lookup in the tree, the cost of managing (creating, joining) the threads can be higher than the time to actually perform the lookups.
 
-Analyzing the running time, we see that two of the threads have a very similar performace, **p_lock_level** and **p_lock_node**. The branch **p_lock_level** works with mutexes that lock the current level on which they are working in the tree. This is expected to be a low performance branch because, usually, the radix trees will not have a big height (tracked bits divided by radix). The maximum height of the tree will then **limit** the number of threads than can be traversing the tree concurrently.
+Analyzing the running time, we see that two of the threads have a very similar performance, **p_lock_level** and **p_lock_node**. The branch **p_lock_level** works with mutexes that lock the current level on which they are working in the tree. This is expected to be a low performance branch because, usually, the radix trees will not have a big height (tracked bits divided by radix). The maximum height of the tree will then **limit** the number of threads than can be traversing the tree concurrently.
 
-Running the test program for **p_lock_level** using perf, with **RANGE = 31, KEYS = 5000000, LOOKUPS = 10000000, TESTS = 1 and THREADS = 32** (all the perf commands below are run with these paremeters) we can see that the main overhead for this branch is the lock of mutexes.
+Running the test program for **p_lock_level** using perf, with **RANGE = 31, KEYS = 5000000, LOOKUPS = 10000000, TESTS = 1 and THREADS = 32** (all the perf commands below are run with these parameters) we can see that the main overhead for this branch is the lock of mutexes.
 
     Overhead  Command           Shared      Object     Symbol
 
@@ -151,7 +151,7 @@ Among the implementations that provide synchronization through mutexes, the one 
      1.42%  p_lock_subtree  libc-2.19.so        [.] __random_r  
      1.09%  p_lock_subtree  libc-2.19.so        [.] __random  
 
-Finally, the parallel approach **p_no_lock** gets rid of the use of mutexes (and all the cost that comes with it for locking and unlocking mutexes) by exploring atomic operations, namely the macro **ACCESS_ONCE** and the GCC builtin function **__sync_bool_compare_and_swap**. These operations will allow the code to keep synchronization between threads and do not rely on the use of mutexes. 
+Finally, the parallel approach **p_no_lock** gets rid of the use of mutexes (and all the cost that comes with it for locking and unlocking mutexes) by exploring atomic operations, namely the macro [ACCESS_ONCE](https://lwn.net/Articles/508991/) and the GCC built-in function [__sync_bool_compare_and_swap](https://gcc.gnu.org/onlinedocs/gcc-4.4.3/gcc/Atomic-Builtins.html). These operations will allow the code to keep synchronization between threads and do not rely on the use of mutexes. 
 
     Overhead  Command    Shared          Object    Symbol
 
@@ -167,4 +167,10 @@ We can see that there is a gain in performance caused by the absence of operatio
 
 Additionally, we can see in the graph below the relation that compares the throughput (number of lookups/total time spent on lookups) for all the implementations.
 
-![Graph 1](https://s31.postimg.org/z0pc5mwnv/graph3.png)
+Throughput x Number of Threads
+
+![Graph 1](https://s31.postimg.org/4vn3f7nh7/graph5.png)
+
+Running time x Number of Threads
+
+![Graph 2](https://s31.postimg.org/rqrd3miez/graph4.png)
