@@ -22,6 +22,8 @@ import sys
 
 # Error checking
 
+MILLION = 1E6
+
 args = sys.argv
 
 filename = args[0]
@@ -64,7 +66,7 @@ graph_ext = "png"
 gnuplot_term = "png"
 graph_size = "1024,768"
 graph_style = "lines"
-time_unit = "ns"
+time_unit = "s"
 
 tree_range = int(args[2])
 keys = int(args[3])
@@ -166,7 +168,7 @@ def test2():
 			else:
 				num_lookups = lookups * tests * counter
 
-			throughput = num_lookups / float(run_time)
+			throughput = (num_lookups / MILLION) / float(run_time)
 
 			datafile.write("{}\n".format(throughput))
 
@@ -208,7 +210,7 @@ def plot_all():
 		plot_cmds.write("RANGE: {} KEYS: {} LOOKUPS: {} TESTS: {}\"\n"
 		.format(tree_range, keys, lookups, tests))
 		plot_cmds.write("set xlabel 'Number of Threads'\n")
-		plot_cmds.write("set ylabel 'Throughput (lookups/{})'\n"
+		plot_cmds.write("set ylabel 'Throughput (M * lookups/{})'\n"
 			.format(time_unit))
 
 	plot_cmds.write("plot [1:] ")

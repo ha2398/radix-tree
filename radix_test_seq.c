@@ -3,7 +3,6 @@
  */
 
 #include "radix_tree.h"
-#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
@@ -54,7 +53,7 @@ static void print_usage(char *file_name)
  */
 int main(int argc, char **argv)
 {
-	uint64_t lookup_time = 0;
+	double lookup_time = 0;
 	struct timespec start, end;
 
 	int tree_range; /* maximum number of tracked bits and radix */
@@ -146,8 +145,8 @@ int main(int argc, char **argv)
 
 		clock_gettime(CLOCK_REALTIME, &end);
 
-		lookup_time += BILLION * (end.tv_sec - start.tv_sec) +
-			end.tv_nsec - start.tv_nsec;
+		lookup_time += end.tv_sec - start.tv_sec +
+			(end.tv_nsec - start.tv_nsec) / BILLION;
 
 		free(items);
 		radix_tree_delete(&myTree);
@@ -163,7 +162,7 @@ int main(int argc, char **argv)
 
 	free(keys);
 
-	printf("%llu\n", (unsigned long long int) lookup_time);
+	printf("%f\n", lookup_time);
 
 	return 0;
 }
