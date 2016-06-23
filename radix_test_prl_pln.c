@@ -101,7 +101,7 @@ static void clean(struct radix_tree *t)
 static void print_usage(char *file_name)
 {
 	fprintf(stderr, "Error: Invalid number of arguments\n\n");
-	fprintf(stderr, "Usage:\t%s r k t p\n", file_name);
+	fprintf(stderr, "Usage:\t%s r k l t p\n", file_name);
 	fprintf(stderr, "r: Maximum number of bits and radix\n");
 	fprintf(stderr, "k: Number of keys to insert into the trees\n");
 	fprintf(stderr, "l: Number of lookups to perform\n");

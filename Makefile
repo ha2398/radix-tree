@@ -5,7 +5,7 @@ CC = gcc
 INCLUDES = -I.
 
 # Compilation options:
-CFLAGS = -g -Wall $(INCLUDES)
+CFLAGS = -g -Wall -O2 $(INCLUDES)
 
 # Linking options:
 LDFLAGS = -g -L.
@@ -18,7 +18,7 @@ EXECS = master p_lockless p_lock_subtree p_lock_level p_lock_node
 
 # File names
 MST = master
-PNL = p_lockless
+PLLE = p_lockless
 PLS = p_lock_subtree
 PLL = p_lock_level
 PLN = p_lock_node
@@ -40,15 +40,15 @@ radix_test_seq.o: radix_test_seq.c radix_tree.h
 	$(CC) -c $(CFLAGS) radix_test_seq.c
 
 # p_lockless
-$(PNL): radix_test_prl.o libradixtree_$(PNL).a
-	$(CC) -o $(PNL) $(LDFLAGS) radix_test_prl.o -lradixtree_$(PNL) $(LDLIBS)
+$(PLLE): radix_test_prl.o libradixtree_$(PLLE).a
+	$(CC) -o $(PLLE) $(LDFLAGS) radix_test_prl.o -lradixtree_$(PLLE) $(LDLIBS)
 
-libradixtree_$(PNL).a: radix_tree_$(PNL).o
-	ar rc libradixtree_$(PNL).a radix_tree_$(PNL).o
-	ranlib libradixtree_$(PNL).a
+libradixtree_$(PLLE).a: radix_tree_$(PLLE).o
+	ar rc libradixtree_$(PLLE).a radix_tree_$(PLLE).o
+	ranlib libradixtree_$(PLLE).a
 
-radix_tree_$(PNL).o: radix_tree_$(PNL).c radix_tree.h
-	$(CC) -c $(CFLAGS) radix_tree_$(PNL).c
+radix_tree_$(PLLE).o: radix_tree_$(PLLE).c radix_tree.h
+	$(CC) -c $(CFLAGS) radix_tree_$(PLLE).c
 
 # p_lock_subtree
 $(PLS): radix_test_prl.o libradixtree_$(PLS).a
