@@ -4,14 +4,11 @@
 #include <inttypes.h>
 #include <pthread.h>
 #include "radix_tree_pln.h"
+#include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
-
-typedef short bool;
-#define true 1
-#define false 0
 
 #ifndef cpu_relax
 #define cpu_relax() asm volatile("rep; nop" ::: "memory")
