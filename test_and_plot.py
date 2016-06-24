@@ -91,7 +91,7 @@ def get_test_files():
 		print("Compilation error. Aborting.")
 		sys.exit()
 
-	execs = ["master", "p_lock_level", "p_lock_node", "p_lockless",
+	execs = ["sequential", "p_lock_level", "p_lock_node", "p_lockless",
 		 "p_lock_subtree"]
 
 	for f in execs:
@@ -163,10 +163,7 @@ def test2():
 				str(tree_range), str(keys), str(lookups),
 				str(tests), str(counter)])
 
-			if (f == "master"):
-				num_lookups = lookups * tests
-			else:
-				num_lookups = lookups * tests * counter
+			num_lookups = lookups * tests * counter
 
 			throughput = (num_lookups / MILLION) / float(run_time)
 

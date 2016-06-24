@@ -1,8 +1,8 @@
 # RadixTree
 
-Radix Tree implementation in C
+Radix Tree implementations in C
 
-1) The implementation follows this [article](https://lwn.net/Articles/175432/).
+1) The implementations follow this [article](https://lwn.net/Articles/175432/).
 
 2) It supports lookups and lookups with insertion.
 
@@ -10,25 +10,65 @@ Radix Tree implementation in C
 
 4) It does not support keys mapped to same nodes.
 
+## Implementations
+
+Currently, there are 5 different radix tree implementations in the repository. Each of them has a different approach for lookups and how these lookups are allowed to work concurrently.
+
+### sequential
+
+This implementation only allows the lookups to occur sequentially, that is, once a lookup operation starts, a mutex is locked, forcing the other ones to wait. When this same lookup operation ends, the mutex is released and the next lookup operation is allowed to start.
+
+### p_lock_level
+
+In order to push the idea of parallel lookups on the tree forward and develop some sort of parallelism, the approach used in **sequential** needs to be replaced. For that, we need to try to identify what is the critical part of the tree being accessed that needs some sort of protection so that no threads modify it concurrently causing errors. The levels of the tree are one of these critical parts: two threads accessing different levels of the tree offer no threat to the safety of the lookups.
+
+Thinking of that, we can lock a mutex for each level being accessed, and unlock it as soon as the thread currently accessing that level moves forward to traverse the next level.
+
+### p_lock_node
+
+Extending the idea of **p_lock_level**, we can observe that, at a given moment, a level must be locked (using a mutex) but a single thread accesses more than one node of that level. Hence, there is no need to lock an entire level of the tree, while unlocking a single node suffices.
+
+To allow more threads to perform lookups on the same tree concurrently, we can lock a mutex for each node being accessed, and unlock it as soon as the thread currently accessing that node moves forward to traverse its child node.
+
+This approach maintains thread safety because no two threads will access the same node (and modify it, by adding children to it) at the same time.
+
+### p_lock_subtree
+
+The main problem with **p_lock_node** is that it acquires and releases a very large quantity of mutexes (every time a node is being accessed!), which causes signifcant slowdown in the lookups.
+
+To fix that, we can observe the path that a thread traverses by performing a lookup. It starts on the root node and goes, node by node, until a leaf. This path that all threads traverse during a lookup is a subtree of the radix tree, and all the operations a thread might perform are restrict to this subtree.
+
+Therefore, it suffices to keep thread safety to lock the subtree about to be traversed by a thread at the beggining of all lookups and unlock it when the lookup finishes.
+
+This approach reduces the number of mutexes in comparison to **p_lock_node**
+
+### p_lockless
+
+Even though the performance of **p_lock_subtree** is a great improvement in comparison to the other implementations, we can still observe that the cost of locking and unlocking a mutex cause great slowdown for the implementation.
+
+In order to get rid of this cost, it is necessary to think of ways that replace mutexes but keep the thread safety that mutexes assert.
+
+One of these ways is based on relying on **atomic operations**. Basically, if we use the GCC built-in function for compare and swap, we can allow two threads to traverse the same subtree (and node) of a three in parallel. This kind of parallel traversing only represents a threat to thread safety when one of the threads has to create a new child node for one of the nodes in the tree.
+
+When that happens, it is necessary to make sure only one of the threads is successful in doing so, and the other ones simply return the resulting node of such an operation. 
+
 ## Testing
 
 ### Arguments
 
 The test program receives as arguments the following values:
 
-master:	RANGE KEYS LOOKUPS TESTS
-
-other implementations:	RANGE KEYS LOOKUPS TESTS THREADS
+./test RANGE KEYS LOOKUPS TESTS THREADS
 
 RANGE -> Maximum number of tracked bits and radix to use in order to generate random trees in the tests.
 
-KEYS -> Number of keys to be inserted in the trees for each test instance.
+KEYS -> Number of keys to be inserted in the trees for each test instance. The test program will insert in the trees all keys on the interval [0, KEYS]
 
-LOOKUPS -> Number of lookups to perform on the tree. The test program will perform all possible lookups on the interval [0, LOOKUPS]
+LOOKUPS -> Number of lookups to perform on the tree. These numbers are randomly generated.
 
 TESTS -> Number of test instances per program execution.
 
-THREADS -> Maximum Number of threads to perform the tests. (For all implementations but master)
+THREADS -> Maximum Number of threads to perform the tests.
 
 ### Structure
 
@@ -87,81 +127,17 @@ Currently, these are the graphs supported by the script:
 
 #### Graphs and Implementations' Performance
 
-The very first observation to make regarding the performance of the implementations, is that they all, after a certain number of threads being used, suffer from a decrease in performance when compared to master, which is sequential and therefore makes no use of the **pthread** library. This happens due to the cost of creating threads (**pthread_create**) and waiting for them to finish their work (**pthread_join**). Also, depending on how many keys we want to lookup in the tree, the cost of managing (creating, joining) the threads can be higher than the time to actually perform the lookups.
+The very first observation to make regarding the performance of the implementations, is that performing the same amount of lookups for a test program which makes no use of the pthread library would be faster than using **sequential**. This happens due to the cost of creating threads (**pthread_create**), managing mutexes (**pthread_mutex_lock and pthread_mutex_unlock**) and waiting for them to finish their work (**pthread_join**).
 
 Analyzing the running time, we see that two of the threads have a very similar performance, **p_lock_level** and **p_lock_node**. The branch **p_lock_level** works with mutexes that lock the current level on which they are working in the tree. This is expected to be a low performance branch because, usually, the radix trees will not have a big height (tracked bits divided by radix). The maximum height of the tree will then **limit** the number of threads than can be traversing the tree concurrently.
 
-Running the test program for **p_lock_level** using perf, with **RANGE = 31, KEYS = 5000000, LOOKUPS = 10000000, TESTS = 1 and THREADS = 32** (all the perf commands below are run with these parameters) we can see that the main overhead for this branch is the lock of mutexes.
-
-    Overhead  Command           Shared      Object     Symbol
-
-    17.35%  p_lock_level  [kernel.kallsyms]   [k] _raw_spin_lock                
-    16.75%  p_lock_level  libpthread-2.19.so  [.] pthread_mutex_lock                
-    10.29%  p_lock_level  libpthread-2.19.so  [.] pthread_mutex_unlock              
-     8.92%  p_lock_level  p_lock_level        [.] thread_find        
-     5.47%  p_lock_level  libpthread-2.19.so  [.] __lll_lock_wait             
-     3.95%  p_lock_level  [kernel.kallsyms]   [k] futex_wait_setup            
-     3.20%  p_lock_level  [kernel.kallsyms]   [k] futex_wake            
-     2.95%  p_lock_level  p_lock_level        [.] radix_tree_find_alloc
-     2.23%  p_lock_level  [kernel.kallsyms]   [k] get_futex_value_locked
-     1.95%  p_lock_level  [kernel.kallsyms]   [k] get_futex_key_refs.isra.13
-     1.95%  p_lock_level  [kernel.kallsyms]   [k] system_call
-     1.90%  p_lock_level  [kernel.kallsyms]   [k] hash_futex
-     1.80%  p_lock_level  [kernel.kallsyms]   [k] do_futex
-     1.62%  p_lock_level  [kernel.kallsyms]   [k] get_futex_key
-     1.53%  p_lock_level  p_lock_level        [.] main 
-     1.36%  p_lock_level  [kernel.kallsyms]   [k] system_call_after_swapgs 
-     1.35%  p_lock_level  libpthread-2.19.so  [.] __lll_unlock_wake   
-     1.08%  p_lock_level  [kernel.kallsyms]   [k] futex_wait                        
+Running the test program for **p_lock_level** using perf, with **RANGE = 31, KEYS = 5000000, LOOKUPS = 10000000, TESTS = 1 and THREADS = 32** (all the perf commands below are run with these parameters) we can see that the main overhead for this branch is the lock of mutexes.      
 
 For **p_lock_node**, the problem is that it has to acquire and release a mutex for every single node it traverses. The cost for doing this is very expensive, since the tree may have up to sum{from 1 to maximum height} of (1 ^ number of slots per node), which can be a very large number.
 
-    Overhead  Command           Shared      Object     Symbol
-
-    21.87%  p_lock_node  [kernel.kallsyms]   [k] _raw_spin_lock              
-    13.59%  p_lock_node  p_lock_node         [.] thread_find 
-    13.48%  p_lock_node  libpthread-2.19.so  [.] pthread_mutex_lock 
-     6.64%  p_lock_node  libpthread-2.19.so  [.] pthread_mutex_unlock
-     4.44%  p_lock_node  libpthread-2.19.so  [.] __lll_lock_wait  
-     4.16%  p_lock_node  [kernel.kallsyms]   [k] futex_wait_setup 
-     3.15%  p_lock_node  p_lock_node         [.] radix_tree_find_alloc 
-     3.04%  p_lock_node  [kernel.kallsyms]   [k] futex_wake 
-     2.05%  p_lock_node  [kernel.kallsyms]   [k] get_futex_value_locked    
-     2.03%  p_lock_node  p_lock_node         [.] main       
-     1.79%  p_lock_node  [kernel.kallsyms]   [k] get_futex_key_refs.isra.13    
-     1.75%  p_lock_node  [kernel.kallsyms]   [k] system_call    
-     1.72%  p_lock_node  [kernel.kallsyms]   [k] hash_futex   
-     1.48%  p_lock_node  [kernel.kallsyms]   [k] get_futex_key  
-     1.27%  p_lock_node  [kernel.kallsyms]   [k] system_call_after_swapgs 
-     1.25%  p_lock_node  [kernel.kallsyms]   [k] do_futex   
-     1.25%  p_lock_node  p_lock_node         [.] find_slot_index 
-     1.16%  p_lock_node  libpthread-2.19.so  [.] __lll_unlock_wake 
-     1.07%  p_lock_node  [kernel.kallsyms]   [k] futex_wait
-
 Among the implementations that provide synchronization through mutexes, the one with best performance is **p_lock_subtree**. This implementation acquires a lock for the subtree (of root node) about to be traversed. This protocol acquires way fewer mutexes than **p_lock_node**.
 
-    Overhead  Command           Shared        Object   Symbol
- 
-    37.47%  p_lock_subtree  p_lock_subtree      [.] thread_find 
-    21.47%  p_lock_subtree  libpthread-2.19.so  [.] pthread_mutex_lock   
-    13.07%  p_lock_subtree  p_lock_subtree      [.] radix_tree_find_alloc  
-     8.15%  p_lock_subtree  libpthread-2.19.so  [.] pthread_mutex_unlock    
-     6.33%  p_lock_subtree  p_lock_subtree      [.] main   
-     4.85%  p_lock_subtree  p_lock_subtree      [.] find_slot_index  
-     1.42%  p_lock_subtree  libc-2.19.so        [.] __random_r  
-     1.09%  p_lock_subtree  libc-2.19.so        [.] __random  
-
 Finally, the parallel approach **p_lockless** gets rid of the use of mutexes (and all the cost that comes with it for locking and unlocking mutexes) by exploring atomic operations, namely the macro [ACCESS_ONCE](https://lwn.net/Articles/508991/) and the GCC built-in function [__sync_bool_compare_and_swap](https://gcc.gnu.org/onlinedocs/gcc-4.4.3/gcc/Atomic-Builtins.html). These operations will allow the code to keep synchronization between threads and do not rely on the use of mutexes. 
-
-    Overhead  Command    Shared          Object    Symbol
-
-    60.24%  p_lockless  p_lockless           [.] thread_find                            
-    19.36%  p_lockless  p_lockless           [.] radix_tree_find_alloc                  
-     9.05%  p_lockless  p_lockless           [.] main                                   
-     4.51%  p_lockless  p_lockless           [.] find_slot_index                        
-     1.94%  p_lockless  libc-2.19.so        [.] __random_r                             
-     1.71%  p_lockless  libc-2.19.so        [.] __random                               
-     1.34%  p_lockless  p_lockless           [.] radix_tree_find
 
 We can see that there is a gain in performance caused by the absence of operations of locking and unlocking mutexes and the implementation spends more time doing the actual work we want to benchmark (thread_find).
 
@@ -169,8 +145,4 @@ Additionally, we can see in the graph below the relation that compares the throu
 
 **Number of Threads x Throughput**
 
-![Graph 1](https://s31.postimg.org/4vn3f7nh7/graph5.png)
-
 **Number of Threads x Running Time**
-
-![Graph 2](https://s31.postimg.org/rqrd3miez/graph4.png)

@@ -14,10 +14,10 @@ LDFLAGS = -g -L.
 LDLIBS = -pthread -lrt
 
 # Executable files
-EXECS = master p_lockless p_lock_subtree p_lock_level p_lock_node
+EXECS = sequential p_lockless p_lock_subtree p_lock_level p_lock_node
 
 # File names
-MST = master
+SEQ = sequential
 PLLE = p_lockless
 PLS = p_lock_subtree
 PLL = p_lock_level
@@ -26,15 +26,15 @@ PLN = p_lock_node
 all: $(EXECS)
 
 # Master
-$(MST): radix_test.o libradixtree_$(MST).a
-	$(CC) -o $(MST) $(LDFLAGS) radix_test.o -lradixtree_$(MST) $(LDLIBS)
+$(SEQ): radix_test.o libradixtree_$(SEQ).a
+	$(CC) -o $(SEQ) $(LDFLAGS) radix_test.o -lradixtree_$(SEQ) $(LDLIBS)
 
-libradixtree_$(MST).a: radix_tree_$(MST).o
-	ar rc libradixtree_$(MST).a radix_tree_$(MST).o
-	ranlib libradixtree_$(MST).a
+libradixtree_$(SEQ).a: radix_tree_$(SEQ).o
+	ar rc libradixtree_$(SEQ).a radix_tree_$(SEQ).o
+	ranlib libradixtree_$(SEQ).a
 
-radix_tree_$(MST).o: radix_tree_$(MST).c radix_tree.h
-	$(CC) -c $(CFLAGS) radix_tree_$(MST).c
+radix_tree_$(SEQ).o: radix_tree_$(SEQ).c radix_tree.h
+	$(CC) -c $(CFLAGS) radix_tree_$(SEQ).c
 
 # p_lockless
 $(PLLE): radix_test.o libradixtree_$(PLLE).a
