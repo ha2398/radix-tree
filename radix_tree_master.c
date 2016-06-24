@@ -10,6 +10,11 @@
 #define DIV_ROUND_UP(n, d) (((n) + (d) - 1) / (d))
 #endif
 
+ /*
+ * Global variables
+ */
+static pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
+
 /* Prints an error @message and stops execution */
 static void die_with_error(char *message)
 {
@@ -34,7 +39,8 @@ void radix_tree_init(struct radix_tree *tree, int bits, int radix)
 	tree->radix = radix;
 	tree->max_height = DIV_ROUND_UP(bits, radix);
 
-	tree->node = calloc(n_slots, sizeof(void *));
+	tree->node = calloc(sizeof(struct radix_node) +
+		(n_slots * sizeof(void *)), 1);
 
 	if (!tree->node)
 		die_with_error("failed to create new node.\n");
@@ -56,6 +62,8 @@ void *radix_tree_find_alloc(struct radix_tree *tree, unsigned long key,
 	struct radix_node *current_node = tree->node;
 	void **next_slot = NULL;
 	void *slot;
+
+	pthread_mutex_lock(&lock);
 
 	while (levels_left) {
 		index = find_slot_index(key, levels_left, radix);
@@ -84,6 +92,8 @@ void *radix_tree_find_alloc(struct radix_tree *tree, unsigned long key,
 
 		levels_left--;
 	}
+
+	pthread_mutex_unlock(&lock);
 
 	return current_node;
 }
