@@ -110,10 +110,13 @@ int main(int argc, char **argv)
 			temp = radix_tree_find_alloc(&myTree, i, create);
 
 			if (items[i]) {
-				if (temp != items[i])
+				if (temp != items[i]) {
 					err_flag = 1;
+					break;
+				}
 			} else if (!temp) {
 				err_flag = 1;
+				break;
 			} else {
 				items[i] = temp;
 			}
@@ -123,9 +126,6 @@ int main(int argc, char **argv)
 			fprintf(stderr, "\n[Error number %d detected]\n",
 				err_flag);
 
-			free(keys);
-			free(items);
-			radix_tree_delete(&myTree);
 			return 0;
 		}
 
@@ -139,8 +139,10 @@ int main(int argc, char **argv)
 		for (i = 0; i < n_lookups; i++) {
 			temp = radix_tree_find(&myTree, keys[i]);
 
-			if (items[keys[i]] != temp)
+			if (items[keys[i]] != temp) {
 				err_flag = 2;
+				break;
+			}
 		}
 
 		clock_gettime(CLOCK_REALTIME, &end);
@@ -155,12 +157,9 @@ int main(int argc, char **argv)
 			fprintf(stderr, "\n[Error number %d detected]\n",
 				err_flag);
 
-			free(keys);
 			return 0;
 		}
 	}
-
-	free(keys);
 
 	printf("%f\n", lookup_time);
 

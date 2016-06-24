@@ -80,22 +80,6 @@ static void *thread_find(void *thread_arg)
 	return NULL;
 }
 
-/* Prints and error message and frees allocated memory */
-static void clean(struct radix_tree *t)
-{
-	int i;
-
-	if (err_flag)
-		fprintf(stderr, "\n[Error number %d detected]\n", err_flag);
-
-	for (i = 0; i < n_threads; i++)
-		free(keys[i]);
-
-	free(keys);
-	free(items);
-	radix_tree_delete(t);
-}
-
 static void print_usage(char *file_name)
 {
 	fprintf(stderr, "Error: Invalid number of arguments\n\n");
@@ -190,17 +174,22 @@ int main(int argc, char **argv)
 			temp = radix_tree_find_alloc(&myTree, i, create);
 
 			if (items[i]) {
-				if (temp != items[i])
+				if (temp != items[i]) {
 					err_flag = 1;
+					break;
+				}
 			} else if (!temp) {
 				err_flag = 1;
+				break;
 			} else {
 				items[i] = temp;
 			}
 		}
 
 		if (err_flag) {
-			clean(&myTree);
+			fprintf(stderr, "\n[Error number %d detected]\n",
+				err_flag);
+
 			return 0;
 		}
 
@@ -235,19 +224,15 @@ int main(int argc, char **argv)
 		free(ids);
 
 		if (err_flag) {
-			clean(&myTree);
+			fprintf(stderr, "\n[Error number %d detected]\n",
+				err_flag);
+
 			return 0;
 		}
 
 		free(items);
 		radix_tree_delete(&myTree);
 	}
-
-	for (i = 0; i < n_threads; i++)
-		free(keys[i]);
-
-	free(keys);
-	free(threads);
 
 	printf("%f\n", lookup_time);
 

@@ -80,22 +80,6 @@ static void *thread_find(void *thread_arg)
 	return NULL;
 }
 
-/* Prints and error message and frees allocated memory */
-static void clean(struct radix_tree *t)
-{
-	int i;
-
-	if (err_flag)
-		fprintf(stderr, "\n[Error number %d detected]\n", err_flag);
-
-	for (i = 0; i < n_threads; i++)
-		free(keys[i]);
-
-	free(keys);
-	free(items);
-	radix_tree_delete(t);
-}
-
 static void print_usage(char *file_name)
 {
 	fprintf(stderr, "Error: Invalid number of arguments\n\n");
@@ -129,7 +113,7 @@ int main(int argc, char **argv)
 	int tree_range; /* maximum number of tracked bits and radix */
 	unsigned long n_keys; /* number of inserted keys */
 	unsigned long n_tests; /* number of test instances per execution */
-	unsigned long lookups_range; /* max key to be looked up on the tree */
+	unsigned long lookups_rage; /* max key to be looked up on the tree */
 
 	int i, j, k;
 	int bits;
@@ -147,7 +131,7 @@ int main(int argc, char **argv)
 	n_lookups = atoi(argv[3]);
 	n_tests = atoi(argv[4]);
 	n_threads = atoi(argv[5]);
-	lookups_range = n_keys;
+	lookups_rage = n_keys;
 
 	threads = malloc(sizeof(*threads) * n_threads);
 	if (!threads)
@@ -190,24 +174,29 @@ int main(int argc, char **argv)
 			temp = radix_tree_find_alloc(&myTree, i, create);
 
 			if (items[i]) {
-				if (temp != items[i])
+				if (temp != items[i]) {
 					err_flag = 1;
+					break;
+				}
 			} else if (!temp) {
 				err_flag = 1;
+				break;
 			} else {
 				items[i] = temp;
 			}
 		}
 
 		if (err_flag) {
-			clean(&myTree);
+			fprintf(stderr, "\n[Error number %d detected]\n",
+				err_flag);
+
 			return 0;
 		}
 
 		/* generates random keys to lookup */
 		for (i = 0; i < n_threads; i++)
 			for (k = 0; k < n_lookups; k++)
-				keys[i][k] = rand() % lookups_range;
+				keys[i][k] = rand() % lookups_rage;
 
 		ids = malloc(sizeof(*ids) * n_threads);
 		for (i = 0; i < n_threads; i++)
@@ -235,20 +224,16 @@ int main(int argc, char **argv)
 		free(ids);
 
 		if (err_flag) {
-			clean(&myTree);
+			fprintf(stderr, "\n[Error number %d detected]\n",
+				err_flag);
+
 			return 0;
 		}
 
 		free(items);
 		radix_tree_delete(&myTree);
 	}
-
-	for (i = 0; i < n_threads; i++)
-		free(keys[i]);
-
-	free(keys);
-	free(threads);
-
+	
 	printf("%f\n", lookup_time);
 
 	return 0;
