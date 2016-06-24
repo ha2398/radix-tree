@@ -2,10 +2,13 @@
  * radix_tree.h
  */
 
+#include <pthread.h>
+
 #ifndef _RADIX_TREE_H_
 #define _RADIX_TREE_H_
 
 struct radix_node {
+	pthread_mutex_t lock;
 	void *slots[0];
 };
 

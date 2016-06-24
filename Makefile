@@ -73,18 +73,15 @@ radix_tree_$(PLL).o: radix_tree_$(PLL).c radix_tree.h
 	$(CC) -c $(CFLAGS) radix_tree_$(PLL).c
 
 # p_lock_node
-$(PLN): radix_test_prl_pln.o libradixtree_$(PLN).a
-	$(CC) -o $(PLN) $(LDFLAGS) radix_test_prl_pln.o -lradixtree_$(PLN) $(LDLIBS)
+$(PLN): radix_test_prl.o libradixtree_$(PLN).a
+	$(CC) -o $(PLN) $(LDFLAGS) radix_test_prl.o -lradixtree_$(PLN) $(LDLIBS)
 
 libradixtree_$(PLN).a: radix_tree_$(PLN).o
 	ar rc libradixtree_$(PLN).a radix_tree_$(PLN).o
 	ranlib libradixtree_$(PLN).a
 
-radix_tree_$(PLN).o: radix_tree_$(PLN).c radix_tree_pln.h
+radix_tree_$(PLN).o: radix_tree_$(PLN).c radix_tree.h
 	$(CC) -c $(CFLAGS) radix_tree_$(PLN).c
-
-radix_test_prl_pln.o: radix_test_prl_pln.c radix_tree_pln.h
-	$(CC) -c $(CFLAGS) radix_test_prl_pln.c
 
 radix_test_prl.o: radix_test_prl.c radix_tree.h
 	$(CC) -c $(CFLAGS) radix_test_prl.c
