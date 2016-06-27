@@ -75,9 +75,9 @@ lookups = int(args[4])
 tests = int(args[5])
 threads = int(args[6])
 
-impl_list = [
-	"sequential",
+implementations = [
 	"lock_level",
+	"sequential",
 	"lock_node",
 	"lock_subtree",
 	"lockless"
@@ -110,7 +110,7 @@ def test1():
 
 	os.chdir("{}/test_files".format(os.getcwd()))
 
-	for f in impl_list:
+	for f in implementations:
 		try:
 			os.remove("{}.dat".format(f))
 		except OSError:
@@ -127,6 +127,7 @@ def test1():
 
 			output = subp.check_output(["taskset", "-c",
 				"0-{}".format(counter - 1),
+				"valgrind",
 				"./{}".format(test_file),
 				"-r {}".format(str(tree_range)),
 				"-k {}".format(str(keys)),
@@ -153,7 +154,7 @@ def test2():
 
 	os.chdir("{}/test_files".format(os.getcwd()))
 
-	for f in impl_list:
+	for f in implementations:
 		try:
 			os.remove("{}.data".format(f))
 		except OSError:
@@ -169,6 +170,7 @@ def test2():
 			print("Number of threads: {}".format(counter))
 
 			run_time = subp.check_output(["taskset", "-c",
+				"valgrind",
 				"0-{}".format(counter - 1),
 				"./{}".format(test_file),
 				"-r {}".format(str(tree_range)),

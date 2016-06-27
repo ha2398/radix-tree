@@ -30,7 +30,6 @@
 #define N_LOOKUPS 60000;
 #define N_TESTS 4;
 #define N_THREADS 16;
-#define IMPL_DESC "sequential"
 
 #define OPTSTRING "r:k:l:t:p:i:"
 

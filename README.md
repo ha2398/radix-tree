@@ -18,33 +18,33 @@ Currently, there are 5 different radix tree implementations in the repository. E
 
 This implementation only allows the lookups to occur sequentially, that is, once a lookup operation starts, a mutex is locked, forcing the other ones to wait. When this same lookup operation ends, the mutex is released and the next lookup operation is allowed to start.
 
-### p_lock_level
+### lock_level
 
 In order to push the idea of parallel lookups on the tree forward and develop some sort of parallelism, the approach used in **sequential** needs to be replaced. For that, we need to try to identify what is the critical part of the tree being accessed that needs some sort of protection so that no threads modify it concurrently causing errors. The levels of the tree are one of these critical parts: two threads accessing different levels of the tree offer no threat to the safety of the lookups.
 
 Thinking of that, we can lock a mutex for each level being accessed, and unlock it as soon as the thread currently accessing that level moves forward to traverse the next level.
 
-### p_lock_node
+### lock_node
 
-Extending the idea of **p_lock_level**, we can observe that, at a given moment, a level must be locked (using a mutex) but a single thread accesses more than one node of that level. Hence, there is no need to lock an entire level of the tree, while unlocking a single node suffices.
+Extending the idea of **lock_level**, we can observe that, at a given moment, a level must be locked (using a mutex) but a single thread accesses more than one node of that level. Hence, there is no need to lock an entire level of the tree, while unlocking a single node suffices.
 
 To allow more threads to perform lookups on the same tree concurrently, we can lock a mutex for each node being accessed, and unlock it as soon as the thread currently accessing that node moves forward to traverse its child node.
 
 This approach maintains thread safety because no two threads will access the same node (and modify it, by adding children to it) at the same time.
 
-### p_lock_subtree
+### lock_subtree
 
-The main problem with **p_lock_node** is that it acquires and releases a very large quantity of mutexes (every time a node is being accessed!), which causes signifcant slowdown in the lookups.
+The main problem with **lock_node** is that it acquires and releases a very large quantity of mutexes (every time a node is being accessed!), which causes signifcant slowdown in the lookups.
 
 To fix that, we can observe the path that a thread traverses by performing a lookup. It starts on the root node and goes, node by node, until a leaf. This path that all threads traverse during a lookup is a subtree of the radix tree, and all the operations a thread might perform are restrict to this subtree.
 
 Therefore, it suffices to keep thread safety to lock the subtree about to be traversed by a thread at the beggining of all lookups and unlock it when the lookup finishes.
 
-This approach reduces the number of mutexes in comparison to **p_lock_node**
+This approach reduces the number of mutexes in comparison to **lock_node**
 
-### p_lockless
+### lockless
 
-Even though the performance of **p_lock_subtree** is a great improvement in comparison to the other implementations, we can still observe that the cost of locking and unlocking a mutex cause great slowdown for the implementation.
+Even though the performance of **lock_subtree** is a great improvement in comparison to the other implementations, we can still observe that the cost of locking and unlocking a mutex cause great slowdown for the implementation.
 
 In order to get rid of this cost, it is necessary to think of ways that replace mutexes but keep the thread safety that mutexes assert.
 
@@ -58,7 +58,7 @@ When that happens, it is necessary to make sure only one of the threads is succe
 
 The test program receives as arguments the following values:
 
-./test RANGE KEYS LOOKUPS TESTS THREADS
+./test -r RANGE -k KEYS -l LOOKUPS - t TESTS -t THREADS -i IMPLEMENTATION
 
 RANGE -> Maximum number of tracked bits and radix to use in order to generate random trees in the tests.
 
@@ -69,6 +69,8 @@ LOOKUPS -> Number of lookups to perform on the tree. These numbers are randomly 
 TESTS -> Number of test instances per program execution.
 
 THREADS -> Maximum Number of threads to perform the tests.
+
+IMPLEMENTATION -> Selects which implementation to test, among the ones described above.
 
 ### Structure
 
@@ -129,15 +131,15 @@ Currently, these are the graphs supported by the script:
 
 The very first observation to make regarding the performance of the implementations, is that performing the same amount of lookups for a test program which makes no use of the pthread library would be faster than using **sequential**. This happens due to the cost of creating threads (**pthread_create**), managing mutexes (**pthread_mutex_lock and pthread_mutex_unlock**) and waiting for them to finish their work (**pthread_join**).
 
-Analyzing the running time, we see that two of the threads have a very similar performance, **p_lock_level** and **p_lock_node**. The branch **p_lock_level** works with mutexes that lock the current level on which they are working in the tree. This is expected to be a low performance branch because, usually, the radix trees will not have a big height (tracked bits divided by radix). The maximum height of the tree will then **limit** the number of threads than can be traversing the tree concurrently.
+Analyzing the running time, we see that two of the threads have a very similar performance, **lock_level** and **lock_node**. The implementation **lock_level** works with mutexes that lock the current level on which they are working in the tree. This is expected to be a low performance implementation because, usually, the radix trees will not have a big height (tracked bits divided by radix). The maximum height of the tree will then **limit** the number of threads than can be traversing the tree concurrently.
 
-Running the test program for **p_lock_level** using perf, with **RANGE = 31, KEYS = 5000000, LOOKUPS = 10000000, TESTS = 1 and THREADS = 32** (all the perf commands below are run with these parameters) we can see that the main overhead for this branch is the lock of mutexes.      
+Running the test program for **lock_level** using perf, with **RANGE = 31, KEYS = 5000000, LOOKUPS = 10000000, TESTS = 1 and THREADS = 32** (all the perf commands below are run with these parameters) we can see that the main overhead for this implementation is the lock of mutexes.      
 
-For **p_lock_node**, the problem is that it has to acquire and release a mutex for every single node it traverses. The cost for doing this is very expensive, since the tree may have up to sum{from 1 to maximum height} of (1 ^ number of slots per node), which can be a very large number.
+For **lock_node**, the problem is that it has to acquire and release a mutex for every single node it traverses. The cost for doing this is very expensive, since the tree may have up to sum{from 1 to maximum height} of (1 ^ number of slots per node), which can be a very large number.
 
-Among the implementations that provide synchronization through mutexes, the one with best performance is **p_lock_subtree**. This implementation acquires a lock for the subtree (of root node) about to be traversed. This protocol acquires way fewer mutexes than **p_lock_node**.
+Among the implementations that provide synchronization through mutexes, the one with best performance is **lock_subtree**. This implementation acquires a lock for the subtree (of root node) about to be traversed. This protocol acquires way fewer mutexes than **lock_node**.
 
-Finally, the parallel approach **p_lockless** gets rid of the use of mutexes (and all the cost that comes with it for locking and unlocking mutexes) by exploring atomic operations, namely the macro [ACCESS_ONCE](https://lwn.net/Articles/508991/) and the GCC built-in function [__sync_bool_compare_and_swap](https://gcc.gnu.org/onlinedocs/gcc-4.4.3/gcc/Atomic-Builtins.html). These operations will allow the code to keep synchronization between threads and do not rely on the use of mutexes. 
+Finally, the parallel approach **lockless** gets rid of the use of mutexes (and all the cost that comes with it for locking and unlocking mutexes) by exploring atomic operations, namely the macro [ACCESS_ONCE](https://lwn.net/Articles/508991/) and the GCC built-in function [__sync_bool_compare_and_swap](https://gcc.gnu.org/onlinedocs/gcc-4.4.3/gcc/Atomic-Builtins.html). These operations will allow the code to keep synchronization between threads and do not rely on the use of mutexes. 
 
 We can see that there is a gain in performance caused by the absence of operations of locking and unlocking mutexes and the implementation spends more time doing the actual work we want to benchmark (thread_find).
 
