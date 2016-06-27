@@ -27,6 +27,7 @@ MILLION = 1E6
 args = sys.argv
 
 filename = args[0]
+test_file = "radix_test"
 num_args = len(args)
 
 def print_help(args):
@@ -74,6 +75,14 @@ lookups = int(args[4])
 tests = int(args[5])
 threads = int(args[6])
 
+impl_list = [
+	"sequential",
+	"lock_level",
+	"lock_node",
+	"lock_subtree",
+	"lockless"
+]
+
 # Functions
 
 def greetings():
@@ -91,11 +100,7 @@ def get_test_files():
 		print("Compilation error. Aborting.")
 		sys.exit()
 
-	execs = ["sequential", "p_lock_level", "p_lock_node", "p_lockless",
-		 "p_lock_subtree"]
-
-	for f in execs:
-		subp.call(["mv", f, "test_files/{}".format(f)])
+	subp.call(["mv", test_file, "test_files/{}".format(test_file)])
 
 	print("\nDone.\n")
 
@@ -105,13 +110,13 @@ def test1():
 
 	os.chdir("{}/test_files".format(os.getcwd()))
 
-	for f in os.listdir(os.getcwd()):
+	for f in impl_list:
 		try:
-			os.remove("{}.data".format(f))
+			os.remove("{}.dat".format(f))
 		except OSError:
 			pass
 
-		datafile = open("{}.data".format(f), 'w')
+		datafile = open("{}.dat".format(f), 'w')
 
 		print("Testing {}...".format(f))
 
@@ -121,12 +126,14 @@ def test1():
 			print("Number of threads: {}".format(counter))
 
 			output = subp.check_output(["taskset", "-c",
-				"0-{}".format(counter - 1), "./{}".format(f),
+				"0-{}".format(counter - 1),
+				"./{}".format(test_file),
 				"-r {}".format(str(tree_range)),
 				"-k {}".format(str(keys)),
 				"-l {}".format(str(lookups)),
 				"-t {}".format(str(tests)),
-				"-p {}".format(str(counter)]))
+				"-p {}".format(str(counter)),
+				"-i {}".format(f)])
 
 			datafile.write("{}".format(output))
 
@@ -146,7 +153,7 @@ def test2():
 
 	os.chdir("{}/test_files".format(os.getcwd()))
 
-	for f in os.listdir(os.getcwd()):
+	for f in impl_list:
 		try:
 			os.remove("{}.data".format(f))
 		except OSError:
@@ -162,12 +169,14 @@ def test2():
 			print("Number of threads: {}".format(counter))
 
 			run_time = subp.check_output(["taskset", "-c",
-				"0-{}".format(counter - 1), "./{}".format(f),
+				"0-{}".format(counter - 1),
+				"./{}".format(test_file),
 				"-r {}".format(str(tree_range)),
 				"-k {}".format(str(keys)),
 				"-l {}".format(str(lookups)),
 				"-t {}".format(str(tests)),
-				"-p {}".format(str(counter)]))
+				"-p {}".format(str(counter)),
+				"-i {}".format(f)])
 
 			num_lookups = lookups * tests * counter
 
@@ -213,7 +222,7 @@ def plot_all():
 		plot_cmds.write("RANGE: {} KEYS: {} LOOKUPS: {} TESTS: {}\"\n"
 		.format(tree_range, keys, lookups, tests))
 		plot_cmds.write("set xlabel 'Number of Threads'\n")
-		plot_cmds.write("set ylabel 'Throughput (M * lookups/{})'\n"
+		plot_cmds.write("set ylabel 'Throughput (M lookups/{})'\n"
 			.format(time_unit))
 
 	plot_cmds.write("plot [1:] ")

@@ -31,10 +31,10 @@ struct radix_tree_desc {
 };
 
 struct radix_tree_desc sequential_desc;
-struct radix_tree_desc p_lockless_desc;
-struct radix_tree_desc p_lock_subtree_desc;
-struct radix_tree_desc p_lock_level_desc;
-struct radix_tree_desc p_lock_node_desc;
+struct radix_tree_desc lockless_desc;
+struct radix_tree_desc lock_subtree_desc;
+struct radix_tree_desc lock_level_desc;
+struct radix_tree_desc lock_node_desc;
 
 /* Initiaizes @tree according to the number of @bits and specified @radix */
 static void radix_tree_init(struct radix_tree *tree, int bits, int radix);

@@ -12,12 +12,6 @@
 #endif
 
 /*
- * Implementation Descriptor
- */
-struct radix_tree_desc lock_subtree_desc = {"lock_subtree", radix_tree_init,
-	radix_tree_find_alloc, radix_tree_find, radix_tree_delete};
-
-/*
  * Global variables
  */
 static pthread_mutex_t *locks;
@@ -162,3 +156,11 @@ static void radix_tree_delete(struct radix_tree *tree)
 	radix_tree_delete_node(tree->node, n_slots, tree->max_height - 1);
 	free(tree->node);
 }
+
+struct radix_tree_desc lock_subtree_desc = {
+	.name = "lock_subtree",
+	.init = radix_tree_init,
+	.find_alloc = radix_tree_find_alloc,
+	.find = radix_tree_find,
+	.tree_delete = radix_tree_delete
+};

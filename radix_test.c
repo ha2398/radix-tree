@@ -52,12 +52,12 @@ static bool test_start;
 
 /* Implementations' Descriptors */
 
-struct radix_tree_desc descs[] = {
-        [0] = sequential_desc,
-        [1] = lock_level_desc,
-        [2] = lock_node_desc,
-        [3] = lock_subtree_desc,
-        [4] = lockless_desc
+struct radix_tree_desc *descs[] = {
+        [0] = &sequential_desc,
+        [1] = &lock_level_desc,
+        [2] = &lock_node_desc,
+        [3] = &lock_subtree_desc,
+        [4] = &lockless_desc
 };
 
 /* Prints an error @message and stops execution */
@@ -120,7 +120,7 @@ static struct radix_tree_desc *radix_tree_desc_find(const char *name)
 	unsigned long array_size = ARRAY_SIZE(descs);
 
 	for (i = 0; i < array_size; i++) {
-		struct radix_tree_desc *desc = &descs[i];
+		struct radix_tree_desc *desc = descs[i];
 
 		if (!strcmp(desc->name, name))
 			return desc;
@@ -167,7 +167,7 @@ int main(int argc, char **argv)
 	n_lookups = N_LOOKUPS;
 	n_tests = N_TESTS;
 	n_threads = N_THREADS;
-	impl_desc = &descs[0];
+	impl_desc = descs[0];
 
 	lookups_range = n_keys;
 

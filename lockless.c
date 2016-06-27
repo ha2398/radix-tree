@@ -10,12 +10,6 @@
 #define DIV_ROUND_UP(n, d) (((n) + (d) - 1) / (d))
 #endif
 
-/*
- * Implementation Descriptor
- */
-struct radix_tree_desc lockless_desc = {"lockless", radix_tree_init,
-	radix_tree_find_alloc, radix_tree_find, radix_tree_delete};
-
 #ifndef ACCESS_ONCE
 #define ACCESS_ONCE(x) (*(volatile typeof(x) *)&(x))
 #endif
@@ -148,3 +142,11 @@ static void radix_tree_delete(struct radix_tree *tree)
 	radix_tree_delete_node(tree->node, n_slots, tree->max_height - 1);
 	free(tree->node);
 }
+
+struct radix_tree_desc lockless_desc = {
+	.name = "lockless",
+	.init = radix_tree_init,
+	.find_alloc = radix_tree_find_alloc,
+	.find = radix_tree_find,
+	.tree_delete = radix_tree_delete
+};

@@ -5,18 +5,21 @@ CC = gcc
 INCLUDES = -I.
 
 # Compilation options:
-CFLAGS = -g -Wall -O2 $(INCLUDES)
+CFLAGS = -g -O2 $(INCLUDES)
 
 # Linking options:
 LDFLAGS = -g -L.
 
 # Libraries
-LDLIBS = -pthread -lrt
+LDLIBS = -pthread -lrt -lradixtree
 
-all: radix_tree_test
+# Executable
+EXEC = radix_test
 
-radix_tree_test: libradixtree.a radix_test.o
-	$(CC) -o $(LDFLAGS) radix_test.o -lradixtree $(LDLIBS)
+all: $(EXEC)
+
+$(EXEC): libradixtree.a radix_test.o
+	$(CC) $(LDFLAGS) radix_test.o $(LDLIBS) -o $(EXEC)
 
 radix_tree_test.o: radix_test.c radix_tree.h
 	$(CC) -c $(CFLAGS) radix_test.c
@@ -45,7 +48,7 @@ sequential.o: sequential.c radix_tree.h
 
 .PHONY: clean
 clean:
-	rm -rf *.o *.a $(EXECS) graph.* test_files
+	rm -rf *.o *.a $(EXEC) graph.* test_files
 
 .PHONY: clear
 clear:
