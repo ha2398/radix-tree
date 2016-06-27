@@ -18,25 +18,46 @@ struct radix_tree {
 	int max_height; /* depends on the number of bits and the radix */
 };
 
+/*
+ * Implementations Descriptors
+ */
+struct radix_tree_desc {
+	char *name;
+        void (*init)(struct radix_tree *, int, int);
+        void *(*find_alloc)(struct radix_tree *, unsigned long,
+        	void *(*)(unsigned long));
+        void *(*find)(struct radix_tree *, unsigned long);
+        void (*tree_delete)(struct radix_tree *);
+};
+
+struct radix_tree_desc sequential_desc;
+struct radix_tree_desc p_lockless_desc;
+struct radix_tree_desc p_lock_subtree_desc;
+struct radix_tree_desc p_lock_level_desc;
+struct radix_tree_desc p_lock_node_desc;
+
 /* Initiaizes @tree according to the number of @bits and specified @radix */
-void radix_tree_init(struct radix_tree *tree, int bits, int radix);
+static void radix_tree_init(struct radix_tree *tree, int bits, int radix);
 
 /*
  * If there is an item associated with @key in the tree, returns it.
  * Otherwise, calls "create" function to allocate it if "create" is not NULL.
  */
-void *radix_tree_find_alloc(struct radix_tree *tree, unsigned long index,
+
+static void *radix_tree_find_alloc(struct radix_tree *tree, unsigned long index,
 				void *(*create)(unsigned long));
 
 /*
  * Works just like radix_tree_find_alloc but does not allocate memory for
  * new item if it is not found in the tree.
  */
-void *radix_tree_find(struct radix_tree *tree, unsigned long key);
+
+static void *radix_tree_find(struct radix_tree *tree, unsigned long key);
 
 /*
  * Deletes a tree and its contents by deallocating its memory
  */
-void radix_tree_delete(struct radix_tree *tree);
+
+static void radix_tree_delete(struct radix_tree *tree);
 
 #endif

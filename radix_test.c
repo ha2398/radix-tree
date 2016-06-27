@@ -6,7 +6,9 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <time.h>
+#include <unistd.h>
 
 #ifndef cpu_relax
 #define cpu_relax() asm volatile("rep; nop" ::: "memory")
@@ -16,7 +18,21 @@
 #define ACCESS_ONCE(x) (*(volatile typeof(x) *)&(x))
 #endif
 
+#ifndef ARRAY_SIZE
+#define ARRAY_SIZE(x) (sizeof(x) / sizeof(*(x)))
+#endif
+
 #define BILLION 1E9
+
+/* Default parameter values */
+#define TREE_RANGE 16;
+#define N_KEYS 30000;
+#define N_LOOKUPS 60000;
+#define N_TESTS 4;
+#define N_THREADS 16;
+#define IMPL_DESC "sequential"
+
+#define OPTSTRING "r:k:l:t:p:i:"
 
 /*
  * Global Variables
@@ -29,9 +45,20 @@ static unsigned long n_lookups; /* number of lookups per thread */
 static unsigned long n_threads; /* number of threads to use for lookups */
 static struct radix_tree myTree;
 
+struct radix_tree_desc *impl_desc;
+
 static unsigned long n_ready_threads;
 static bool test_start;
 
+/* Implementations' Descriptors */
+
+struct radix_tree_desc descs[] = {
+        [0] = sequential_desc,
+        [1] = lock_level_desc,
+        [2] = lock_node_desc,
+        [3] = lock_subtree_desc,
+        [4] = lockless_desc
+};
 
 /* Prints an error @message and stops execution */
 static void die_with_error(char *message)
@@ -69,7 +96,7 @@ static void *thread_find(void *thread_arg)
 		cpu_relax();
 
 	for (j = 0; j < n_lookups; j++) {
-		temp = radix_tree_find(&myTree, keys[i][j]);
+		temp = impl_desc->find(&myTree, keys[i][j]);
 
 		if (items[keys[i][j]] != temp) {
 			err_flag = 2;
@@ -83,12 +110,23 @@ static void *thread_find(void *thread_arg)
 static void print_usage(char *file_name)
 {
 	fprintf(stderr, "Error: Invalid number of arguments\n\n");
-	fprintf(stderr, "Usage:\t%s r k l t p\n", file_name);
-	fprintf(stderr, "r: Maximum number of bits and radix\n");
-	fprintf(stderr, "k: Number of keys to insert into the trees\n");
-	fprintf(stderr, "l: Number of lookups to perform\n");
-	fprintf(stderr, "t: Number of test instances\n");
-	fprintf(stderr, "p: Number of threads\n");
+	fprintf(stderr, "Usage:\t%s [-r range] [-k keys] [-l lookups]"
+		"[-t tests] [-p threads] [-i implementation]\n", file_name);
+}
+
+static struct radix_tree_desc *radix_tree_desc_find(const char *name)
+{
+	int i;	
+	unsigned long array_size = ARRAY_SIZE(descs);
+
+	for (i = 0; i < array_size; i++) {
+		struct radix_tree_desc *desc = &descs[i];
+
+		if (!strcmp(desc->name, name))
+			return desc;
+	}
+
+	return NULL;
 }
 
 /*
@@ -113,25 +151,56 @@ int main(int argc, char **argv)
 	int tree_range; /* maximum number of tracked bits and radix */
 	unsigned long n_keys; /* number of inserted keys */
 	unsigned long n_tests; /* number of test instances per execution */
-	unsigned long lookups_rage; /* max key to be looked up on the tree */
+	unsigned long lookups_range; /* max key to be looked up on the tree */
 
-	int i, j, k;
-	int bits;
+	int i, j, k, opt;
+	int bits, radix;
 	int *ids;
-	int radix;
 	void *temp; /* result of tree lookups */
 
-	if (argc < 6) {
-		print_usage(argv[0]);
-		return 0;
-	}
+	extern char *optarg;
 
-	tree_range = atoi(argv[1]);
-	n_keys = atoi(argv[2]);
-	n_lookups = atoi(argv[3]);
-	n_tests = atoi(argv[4]);
-	n_threads = atoi(argv[5]);
-	lookups_rage = n_keys;
+	/* Default parameter values */
+
+	tree_range = TREE_RANGE;
+	n_keys = N_KEYS;
+	n_lookups = N_LOOKUPS;
+	n_tests = N_TESTS;
+	n_threads = N_THREADS;
+	impl_desc = &descs[0];
+
+	lookups_range = n_keys;
+
+	opt = getopt(argc, argv, OPTSTRING);
+	while (opt != -1) {
+		switch (opt) {
+		case 'r':
+			tree_range = atoi(optarg);
+			break;
+		case 'k':
+			n_keys = atoi(optarg);
+			lookups_range = n_keys;
+			break;
+		case 'l':
+			n_lookups = atoi(optarg);
+			break;
+		case 't':
+			n_tests = atoi(optarg);
+			break;
+		case 'p':
+			n_threads = atoi(optarg);
+			break;
+		case 'i':
+			impl_desc = radix_tree_desc_find(optarg);
+			break;
+		case '?':
+		case ':':
+			print_usage(argv[0]);
+			return 0;
+		}
+
+		opt = getopt(argc, argv, OPTSTRING);
+	}
 
 	threads = malloc(sizeof(*threads) * n_threads);
 	if (!threads)
@@ -167,11 +236,11 @@ int main(int argc, char **argv)
 		if (!items)
 			die_with_error("failed to allocate items array.\n");
 
-		radix_tree_init(&myTree, bits, radix);
+		impl_desc->init(&myTree, bits, radix);
 
 		/* testing find_alloc */
 		for (i = 0; i < n_keys; i++) {
-			temp = radix_tree_find_alloc(&myTree, i, create);
+			temp = impl_desc->find_alloc(&myTree, i, create);
 
 			if (items[i]) {
 				if (temp != items[i]) {
@@ -196,7 +265,7 @@ int main(int argc, char **argv)
 		/* generates random keys to lookup */
 		for (i = 0; i < n_threads; i++)
 			for (k = 0; k < n_lookups; k++)
-				keys[i][k] = rand() % lookups_rage;
+				keys[i][k] = rand() % lookups_range;
 
 		ids = malloc(sizeof(*ids) * n_threads);
 		for (i = 0; i < n_threads; i++)
@@ -231,7 +300,7 @@ int main(int argc, char **argv)
 		}
 
 		free(items);
-		radix_tree_delete(&myTree);
+		impl_desc->tree_delete(&myTree);
 	}
 
 	printf("%f\n", lookup_time);

@@ -1,5 +1,5 @@
 /*
- * radix_tree_p_lockless.c
+ * lockless.c
  */
 
 #include "radix_tree.h"
@@ -9,6 +9,12 @@
 #ifndef DIV_ROUND_UP
 #define DIV_ROUND_UP(n, d) (((n) + (d) - 1) / (d))
 #endif
+
+/*
+ * Implementation Descriptor
+ */
+struct radix_tree_desc lockless_desc = {"lockless", radix_tree_init,
+	radix_tree_find_alloc, radix_tree_find, radix_tree_delete};
 
 #ifndef ACCESS_ONCE
 #define ACCESS_ONCE(x) (*(volatile typeof(x) *)&(x))
@@ -25,7 +31,7 @@ static void die_with_error(char *message)
 	exit(EXIT_FAILURE);
 }
 
-void radix_tree_init(struct radix_tree *tree, int bits, int radix)
+static void radix_tree_init(struct radix_tree *tree, int bits, int radix)
 {
 	if (radix < 1) {
 		perror("Invalid radix\n");
@@ -55,7 +61,7 @@ static int find_slot_index(unsigned long key, int levels_left, int radix)
 	return key >> ((levels_left - 1) * radix) & ((1 << radix) - 1);
 }
 
-void *radix_tree_find_alloc(struct radix_tree *tree, unsigned long key,
+static void *radix_tree_find_alloc(struct radix_tree *tree, unsigned long key,
 			    void *(*create)(unsigned long))
 {
 	int levels_left = tree->max_height;
@@ -105,7 +111,7 @@ retry:
 	return current_node;
 }
 
-void *radix_tree_find(struct radix_tree *tree, unsigned long key)
+static void *radix_tree_find(struct radix_tree *tree, unsigned long key)
 {
 	return radix_tree_find_alloc(tree, key, NULL);
 }
@@ -135,7 +141,7 @@ static void radix_tree_delete_node(struct radix_node *node, int n_slots,
 	}
 }
 
-void radix_tree_delete(struct radix_tree *tree)
+static void radix_tree_delete(struct radix_tree *tree)
 {
 	int n_slots = 1 << tree->radix;
 

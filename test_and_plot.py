@@ -122,8 +122,11 @@ def test1():
 
 			output = subp.check_output(["taskset", "-c",
 				"0-{}".format(counter - 1), "./{}".format(f),
-				str(tree_range), str(keys), str(lookups),
-				str(tests), str(counter)])
+				"-r {}".format(str(tree_range)),
+				"-k {}".format(str(keys)),
+				"-l {}".format(str(lookups)),
+				"-t {}".format(str(tests)),
+				"-p {}".format(str(counter)]))
 
 			datafile.write("{}".format(output))
 
@@ -160,8 +163,11 @@ def test2():
 
 			run_time = subp.check_output(["taskset", "-c",
 				"0-{}".format(counter - 1), "./{}".format(f),
-				str(tree_range), str(keys), str(lookups),
-				str(tests), str(counter)])
+				"-r {}".format(str(tree_range)),
+				"-k {}".format(str(keys)),
+				"-l {}".format(str(lookups)),
+				"-t {}".format(str(tests)),
+				"-p {}".format(str(counter)]))
 
 			num_lookups = lookups * tests * counter
 

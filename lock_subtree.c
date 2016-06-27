@@ -1,5 +1,5 @@
 /*
- * radix_tree_p_lock_level.c
+ * lock_subtree.c
  */
 
 #include <pthread.h>
@@ -10,6 +10,12 @@
 #ifndef DIV_ROUND_UP
 #define DIV_ROUND_UP(n, d) (((n) + (d) - 1) / (d))
 #endif
+
+/*
+ * Implementation Descriptor
+ */
+struct radix_tree_desc lock_subtree_desc = {"lock_subtree", radix_tree_init,
+	radix_tree_find_alloc, radix_tree_find, radix_tree_delete};
 
 /*
  * Global variables
@@ -23,7 +29,7 @@ static void die_with_error(char *message)
 	exit(EXIT_FAILURE);
 }
 
-void radix_tree_init(struct radix_tree *tree, int bits, int radix)
+static void radix_tree_init(struct radix_tree *tree, int bits, int radix)
 {
 	if (radix < 1) {
 		perror("Invalid radix\n");
@@ -46,14 +52,14 @@ void radix_tree_init(struct radix_tree *tree, int bits, int radix)
 	if (!tree->node)
 		die_with_error("failed to create new node.\n");
 
-	locks = malloc(sizeof(*locks) * tree->max_height);
+	locks = malloc(sizeof(*locks) * n_slots);
 
 	if (!locks) {
 		die_with_error("failed to allocate mutexes\n");
 	} else {
 		int i;
 
-		for (i = 0; i < tree->max_height; i++)
+		for (i = 0; i < n_slots; i++)
 			pthread_mutex_init(&locks[i], NULL);
 	}
 }
@@ -64,22 +70,24 @@ static int find_slot_index(unsigned long key, int levels_left, int radix)
 	return (int) (key >> (levels_left * radix) & ((1 << radix) - 1));
 }
 
-void *radix_tree_find_alloc(struct radix_tree *tree, unsigned long key,
+static void *radix_tree_find_alloc(struct radix_tree *tree, unsigned long key,
 			    void *(*create)(unsigned long))
 {
-	int current_level = 0;
 	int levels_left = tree->max_height - 1;
 	int radix = tree->radix;
 	int n_slots = 1 << radix;
 	int index;
+	int subtree;
 
 	struct radix_node *current_node = tree->node;
 	void **next_slot = NULL;
 
+	subtree = find_slot_index(key, levels_left, radix);
+
+	pthread_mutex_lock(&locks[subtree]);
+
 	while (levels_left) {
 		index = find_slot_index(key, levels_left, radix);
-
-		pthread_mutex_lock(&locks[current_level]);
 
 		next_slot = &current_node->slots[index];
 
@@ -94,31 +102,25 @@ void *radix_tree_find_alloc(struct radix_tree *tree, unsigned long key,
 			else
 				current_node = *next_slot;
 		} else {
-			pthread_mutex_unlock(&locks[current_level]);
+			pthread_mutex_unlock(&locks[subtree]);
 			return NULL;
 		}
 
-		pthread_mutex_unlock(&locks[current_level]);
-
-		current_level++;
 		levels_left--;
 	}
 
 	index = find_slot_index(key, levels_left, radix);
-
-	pthread_mutex_lock(&locks[current_level]);
-
 	next_slot = &current_node->slots[index];
 
 	if (!(*next_slot) && create)
 		*next_slot = create(key);
 
-	pthread_mutex_unlock(&locks[current_level]);
+	pthread_mutex_unlock(&locks[subtree]);
 
 	return *next_slot;
 }
 
-void *radix_tree_find(struct radix_tree *tree, unsigned long key)
+static void *radix_tree_find(struct radix_tree *tree, unsigned long key)
 {
 	return radix_tree_find_alloc(tree, key, NULL);
 }
@@ -147,12 +149,12 @@ static void radix_tree_delete_node(struct radix_node *node, int n_slots,
 	}
 }
 
-void radix_tree_delete(struct radix_tree *tree)
+static void radix_tree_delete(struct radix_tree *tree)
 {
 	int i;
 	int n_slots = 1 << tree->radix;
 
-	for (i = 0; i < tree->max_height; i++)
+	for (i = 0; i < n_slots; i++)
 		pthread_mutex_destroy(&locks[i]);
 
 	free(locks);

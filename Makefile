@@ -13,75 +13,35 @@ LDFLAGS = -g -L.
 # Libraries
 LDLIBS = -pthread -lrt
 
-# Executable files
-EXECS = sequential p_lockless p_lock_subtree p_lock_level p_lock_node
+all: radix_tree_test
 
-# File names
-SEQ = sequential
-PLLE = p_lockless
-PLS = p_lock_subtree
-PLL = p_lock_level
-PLN = p_lock_node
+radix_tree_test: libradixtree.a radix_test.o
+	$(CC) -o $(LDFLAGS) radix_test.o -lradixtree $(LDLIBS)
 
-all: $(EXECS)
-
-# Master
-$(SEQ): radix_test.o libradixtree_$(SEQ).a
-	$(CC) -o $(SEQ) $(LDFLAGS) radix_test.o -lradixtree_$(SEQ) $(LDLIBS)
-
-libradixtree_$(SEQ).a: radix_tree_$(SEQ).o
-	ar rc libradixtree_$(SEQ).a radix_tree_$(SEQ).o
-	ranlib libradixtree_$(SEQ).a
-
-radix_tree_$(SEQ).o: radix_tree_$(SEQ).c radix_tree.h
-	$(CC) -c $(CFLAGS) radix_tree_$(SEQ).c
-
-# p_lockless
-$(PLLE): radix_test.o libradixtree_$(PLLE).a
-	$(CC) -o $(PLLE) $(LDFLAGS) radix_test.o -lradixtree_$(PLLE) $(LDLIBS)
-
-libradixtree_$(PLLE).a: radix_tree_$(PLLE).o
-	ar rc libradixtree_$(PLLE).a radix_tree_$(PLLE).o
-	ranlib libradixtree_$(PLLE).a
-
-radix_tree_$(PLLE).o: radix_tree_$(PLLE).c radix_tree.h
-	$(CC) -c $(CFLAGS) radix_tree_$(PLLE).c
-
-# p_lock_subtree
-$(PLS): radix_test.o libradixtree_$(PLS).a
-	$(CC) -o $(PLS) $(LDFLAGS) radix_test.o -lradixtree_$(PLS) $(LDLIBS)
-
-libradixtree_$(PLS).a: radix_tree_$(PLS).o
-	ar rc libradixtree_$(PLS).a radix_tree_$(PLS).o
-	ranlib libradixtree_$(PLS).a
-
-radix_tree_$(PLS).o: radix_tree_$(PLS).c radix_tree.h
-	$(CC) -c $(CFLAGS) radix_tree_$(PLS).c
-
-# p_lock_level
-$(PLL): radix_test.o libradixtree_$(PLL).a
-	$(CC) -o $(PLL) $(LDFLAGS) radix_test.o -lradixtree_$(PLL) $(LDLIBS)
-
-libradixtree_$(PLL).a: radix_tree_$(PLL).o
-	ar rc libradixtree_$(PLL).a radix_tree_$(PLL).o
-	ranlib libradixtree_$(PLL).a
-
-radix_tree_$(PLL).o: radix_tree_$(PLL).c radix_tree.h
-	$(CC) -c $(CFLAGS) radix_tree_$(PLL).c
-
-# p_lock_node
-$(PLN): radix_test.o libradixtree_$(PLN).a
-	$(CC) -o $(PLN) $(LDFLAGS) radix_test.o -lradixtree_$(PLN) $(LDLIBS)
-
-libradixtree_$(PLN).a: radix_tree_$(PLN).o
-	ar rc libradixtree_$(PLN).a radix_tree_$(PLN).o
-	ranlib libradixtree_$(PLN).a
-
-radix_tree_$(PLN).o: radix_tree_$(PLN).c radix_tree.h
-	$(CC) -c $(CFLAGS) radix_tree_$(PLN).c
-
-radix_test.o: radix_test.c radix_tree.h
+radix_tree_test.o: radix_test.c radix_tree.h
 	$(CC) -c $(CFLAGS) radix_test.c
+
+libradixtree.a: lock_level.o lock_node.o lock_subtree.o lockless.o \
+	sequential.o
+	ar rcs libradixtree.a lock_level.o lock_node.o lock_subtree.o \
+		lockless.o sequential.o
+	ranlib libradixtree.a
+
+lock_level.o: lock_level.c radix_tree.h
+	$(CC) -c $(CFLAGS) lock_level.c
+
+lock_node.o: lock_node.c radix_tree.h
+	$(CC) -c $(CFLAGS) lock_node.c
+
+lock_subtree.o: lock_subtree.c \
+	radix_tree.h
+	$(CC) -c $(CFLAGS) lock_subtree.c
+
+lockless.o: lockless.c radix_tree.h
+	$(CC) -c $(CFLAGS) lockless.c
+
+sequential.o: sequential.c radix_tree.h
+	$(CC) -c $(CFLAGS) sequential.c
 
 .PHONY: clean
 clean:
