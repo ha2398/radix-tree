@@ -44,7 +44,7 @@ static unsigned long n_lookups; /* number of lookups per thread */
 static unsigned long n_threads; /* number of threads to use for lookups */
 static struct radix_tree myTree;
 
-struct radix_tree_desc *impl_desc;
+static struct radix_tree_desc *impl_desc;
 
 static unsigned long n_ready_threads;
 static bool test_start;

@@ -125,16 +125,15 @@ def test1():
 			datafile.write("{}\t".format(counter))
 			print("Number of threads: {}".format(counter))
 
-			output = subp.check_output(["taskset", "-c",
-				"0-{}".format(counter - 1),
-				"valgrind",
-				"./{}".format(test_file),
-				"-r {}".format(str(tree_range)),
-				"-k {}".format(str(keys)),
-				"-l {}".format(str(lookups)),
-				"-t {}".format(str(tests)),
-				"-p {}".format(str(counter)),
-				"-i {}".format(f)])
+			output = subp.check_output(["taskset -c " +
+				" 0-{}".format(counter - 1) + 
+				" ./{}".format(test_file) +
+				" -r {}".format(str(tree_range)) +
+				" -k {}".format(str(keys)) +
+				" -l {}".format(str(lookups)) +
+				" -t {}".format(str(tests)) +
+				" -p {}".format(str(counter)) +
+				" -i {}".format(f)], shell=True)
 
 			datafile.write("{}".format(output))
 
@@ -156,11 +155,11 @@ def test2():
 
 	for f in implementations:
 		try:
-			os.remove("{}.data".format(f))
+			os.remove("{}.dat".format(f))
 		except OSError:
 			pass
 
-		datafile = open("{}.data".format(f), 'w')
+		datafile = open("{}.dat".format(f), 'w')
 
 		print("Testing {}...".format(f))
 
@@ -169,16 +168,15 @@ def test2():
 			datafile.write("{}\t".format(counter))
 			print("Number of threads: {}".format(counter))
 
-			run_time = subp.check_output(["taskset", "-c",
-				"valgrind",
-				"0-{}".format(counter - 1),
-				"./{}".format(test_file),
-				"-r {}".format(str(tree_range)),
-				"-k {}".format(str(keys)),
-				"-l {}".format(str(lookups)),
-				"-t {}".format(str(tests)),
-				"-p {}".format(str(counter)),
-				"-i {}".format(f)])
+			run_time = subp.check_output(["taskset -c " +
+				" 0-{}".format(counter - 1) + 
+				" ./{}".format(test_file) +
+				" -r {}".format(str(tree_range)) +
+				" -k {}".format(str(keys)) +
+				" -l {}".format(str(lookups)) +
+				" -t {}".format(str(tests)) +
+				" -p {}".format(str(counter)) +
+				" -i {}".format(f)], shell=True)
 
 			num_lookups = lookups * tests * counter
 
@@ -230,11 +228,11 @@ def plot_all():
 	plot_cmds.write("plot [1:] ")
 
 	counter = 1
-	num_files = len(glob.glob1(os.getcwd(), "*.data"))
+	num_files = len(glob.glob1(os.getcwd(), "*.dat"))
 
 	for f in os.listdir(os.getcwd()):
-		if f.endswith(".data"):
-			f_name = f.replace(".data", "")
+		if f.endswith(".dat"):
+			f_name = f.replace(".dat", "")
 
 			plot_cmds.write("'{}' using 1:2 title \"{}\" with {}"
 				.format(f, f_name, graph_style))

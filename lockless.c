@@ -14,10 +14,6 @@
 #define ACCESS_ONCE(x) (*(volatile typeof(x) *)&(x))
 #endif
 
-/*
- * Global variables
- */
-
 /* Prints an error @message and stops execution */
 static void die_with_error(char *message)
 {

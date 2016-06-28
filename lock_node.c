@@ -11,10 +11,6 @@
 #define DIV_ROUND_UP(n, d) (((n) + (d) - 1) / (d))
 #endif
 
-/*
- * Global variables
- */
-
 /* Prints an error @message and stops execution */
 static void die_with_error(char *message)
 {
