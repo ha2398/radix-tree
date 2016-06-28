@@ -36,8 +36,7 @@ lock_level.o: lock_level.c radix_tree.h
 lock_node.o: lock_node.c radix_tree.h
 	$(CC) -c $(CFLAGS) lock_node.c
 
-lock_subtree.o: lock_subtree.c \
-	radix_tree.h
+lock_subtree.o: lock_subtree.c radix_tree.h
 	$(CC) -c $(CFLAGS) lock_subtree.c
 
 lockless.o: lockless.c radix_tree.h

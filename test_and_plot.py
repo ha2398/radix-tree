@@ -86,13 +86,16 @@ implementations = [
 # Functions
 
 def greetings():
-	print("Test and plot script for Radix Tree Implementations\n".upper())
+	print("Test and plot script for Radix Tree Implementations\n"
+		.upper())
 
 
 def get_test_files():
 	print("Generating executable files...\n")
 
-	shutil.rmtree("{}/test_files".format(os.getcwd()), ignore_errors = True)
+	shutil.rmtree("{}/test_files".format(os.getcwd()),
+		ignore_errors = True)
+
 	subp.call(["mkdir", "test_files"])
 	error = subp.call(["make", "all", "clear"])
 
@@ -100,23 +103,21 @@ def get_test_files():
 		print("Compilation error. Aborting.")
 		sys.exit()
 
-	subp.call(["mv", test_file, "test_files/{}".format(test_file)])
-
 	print("\nDone.\n")
 
 
 def test1():
 	print("Testing files...\n")
 
-	os.chdir("{}/test_files".format(os.getcwd()))
-
 	for f in implementations:
 		try:
-			os.remove("{}.dat".format(f))
+			os.remove("{}/test_files/{}.dat".format(os.getcwd(),
+				f))
 		except OSError:
 			pass
 
-		datafile = open("{}.dat".format(f), 'w')
+		datafile = open("{}/test_files/{}.dat".format(os.getcwd(), f),
+			'w')
 
 		print("Testing {}...".format(f))
 
@@ -125,15 +126,15 @@ def test1():
 			datafile.write("{}\t".format(counter))
 			print("Number of threads: {}".format(counter))
 
-			output = subp.check_output(["taskset -c " +
-				" 0-{}".format(counter - 1) + 
-				" ./{}".format(test_file) +
-				" -r {}".format(str(tree_range)) +
-				" -k {}".format(str(keys)) +
-				" -l {}".format(str(lookups)) +
-				" -t {}".format(str(tests)) +
-				" -p {}".format(str(counter)) +
-				" -i {}".format(f)], shell=True)
+			output = subp.check_output(["taskset", "-c",
+				"0-{}".format(counter - 1),
+				"./{}".format(test_file),
+				"-r{}".format(str(tree_range)),
+				"-k{}".format(str(keys)),
+				"-l{}".format(str(lookups)),
+				"-t{}".format(str(tests)),
+				"-p{}".format(str(counter)),
+				"-i{}".format(f)])
 
 			datafile.write("{}".format(output))
 
@@ -149,17 +150,17 @@ def test1():
 
 
 def test2():
-	print("Testing files...\n")
-
-	os.chdir("{}/test_files".format(os.getcwd()))
+	print("Testing files...\n")		
 
 	for f in implementations:
 		try:
-			os.remove("{}.dat".format(f))
+			os.remove("{}/test_files/{}.dat".format(os.getcwd(),
+				f))
 		except OSError:
 			pass
 
-		datafile = open("{}.dat".format(f), 'w')
+		datafile = open("{}/test_files/{}.dat".format(os.getcwd(), f),
+			'w')
 
 		print("Testing {}...".format(f))
 
@@ -168,15 +169,15 @@ def test2():
 			datafile.write("{}\t".format(counter))
 			print("Number of threads: {}".format(counter))
 
-			run_time = subp.check_output(["taskset -c " +
-				" 0-{}".format(counter - 1) + 
-				" ./{}".format(test_file) +
-				" -r {}".format(str(tree_range)) +
-				" -k {}".format(str(keys)) +
-				" -l {}".format(str(lookups)) +
-				" -t {}".format(str(tests)) +
-				" -p {}".format(str(counter)) +
-				" -i {}".format(f)], shell=True)
+			run_time = subp.check_output(["taskset", "-c",
+				"0-{}".format(counter - 1),
+				"./{}".format(test_file),
+				"-r{}".format(str(tree_range)),
+				"-k{}".format(str(keys)),
+				"-l{}".format(str(lookups)),
+				"-t{}".format(str(tests)),
+				"-p{}".format(str(counter)),
+				"-i{}".format(f)])
 
 			num_lookups = lookups * tests * counter
 
@@ -199,26 +200,29 @@ def plot_all():
 	print("Plotting graphs...\n")
 
 	try:
-		os.remove("plot_commands.gp")
+		os.remove("{}/test_files/plot_commands.gp".format(os.getcwd()))
 	except OSError:
 		pass
 
-	plot_cmds = open("plot_commands.gp", 'w')
+	plot_cmds = open("{}/test_files/plot_commands.gp".format(os.getcwd()),
+		'w')
 
 	plot_cmds.write("set terminal {} ".format(gnuplot_term))
 	plot_cmds.write("size {}\n".format(graph_size))
-	plot_cmds.write("set output '{}/../graph.{}'\n".format(os.getcwd(),
-		graph_ext))
+	plot_cmds.write("set output 'graph.{}'\n".format(graph_ext))
 
 	if (graph_type == 1):
-		plot_cmds.write("set title \"Number of Threads x Running Time\\n")
+		plot_cmds.write("set title \"Number of Threads x "
+			"Running Time\\n")
 		plot_cmds.write("RANGE: {} KEYS: {} LOOKUPS: {} TESTS: {}\"\n"
 		.format(tree_range, keys, lookups, tests))
 		plot_cmds.write("set xlabel 'Number of Threads'\n")
-		plot_cmds.write("set ylabel 'Running Time ({})'\n".format(time_unit))
+		plot_cmds.write("set ylabel 'Running Time ({})'\n"
+			.format(time_unit))
 
 	if (graph_type == 2):
-		plot_cmds.write("set title \"Number of Threads x Throughput\\n")
+		plot_cmds.write("set title \"Number of Threads x "
+			"Throughput\\n")
 		plot_cmds.write("RANGE: {} KEYS: {} LOOKUPS: {} TESTS: {}\"\n"
 		.format(tree_range, keys, lookups, tests))
 		plot_cmds.write("set xlabel 'Number of Threads'\n")
@@ -228,14 +232,16 @@ def plot_all():
 	plot_cmds.write("plot [1:] ")
 
 	counter = 1
-	num_files = len(glob.glob1(os.getcwd(), "*.dat"))
+	num_files = len(glob.glob1("{}/test_files".format(os.getcwd()),
+		"*.dat"))
 
-	for f in os.listdir(os.getcwd()):
+	for f in os.listdir("{}/test_files".format(os.getcwd())):
 		if f.endswith(".dat"):
 			f_name = f.replace(".dat", "")
 
-			plot_cmds.write("'{}' using 1:2 title \"{}\" with {}"
-				.format(f, f_name, graph_style))
+			plot_cmds.write("'{}/test_files/{}' using 1:2 title "
+				"\"{}\" with {}".format(os.getcwd(), f,
+				f_name, graph_style))
 
 			counter = counter + 1
 			if (counter > num_files):
@@ -244,7 +250,8 @@ def plot_all():
 			plot_cmds.write(", ")
 
 	plot_cmds.close()
-	subp.call(["gnuplot", "plot_commands.gp"])
+	subp.call(["gnuplot", "{}/test_files/plot_commands.gp"
+		.format(os.getcwd())])
 
 	print("Plotted graph.{}".format(graph_ext))
 	print("Done\n")

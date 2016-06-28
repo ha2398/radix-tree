@@ -108,7 +108,6 @@ static void *thread_find(void *thread_arg)
 
 static void print_usage(char *file_name)
 {
-	fprintf(stderr, "Error: Invalid number of arguments\n\n");
 	fprintf(stderr, "Usage:\t%s [-r range] [-k keys] [-l lookups]"
 		"[-t tests] [-p threads] [-i implementation]\n", file_name);
 }
@@ -191,11 +190,17 @@ int main(int argc, char **argv)
 			break;
 		case 'i':
 			impl_desc = radix_tree_desc_find(optarg);
+			if (impl_desc == NULL) {
+				fprintf(stderr, "fatal: implementation "
+					"'%s' not found\n", optarg);
+				print_usage(argv[0]);
+				return -1;
+			}
 			break;
 		case '?':
 		case ':':
 			print_usage(argv[0]);
-			return 0;
+			return -1;
 		}
 
 		opt = getopt(argc, argv, OPTSTRING);
@@ -258,7 +263,7 @@ int main(int argc, char **argv)
 			fprintf(stderr, "\n[Error number %d detected]\n",
 				err_flag);
 
-			return 0;
+			return err_flag;
 		}
 
 		/* generates random keys to lookup */
@@ -295,7 +300,7 @@ int main(int argc, char **argv)
 			fprintf(stderr, "\n[Error number %d detected]\n",
 				err_flag);
 
-			return 0;
+			return err_flag;
 		}
 
 		free(items);
