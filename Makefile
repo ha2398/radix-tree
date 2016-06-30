@@ -16,13 +16,13 @@ LDLIBS = -pthread -lrt -lradixtree
 # Executable
 EXEC = radix_test
 
+# Dependencies
+DEPS = radix_tree.h
+
 all: $(EXEC)
 
-$(EXEC): libradixtree.a radix_test.o
-	$(CC) $(LDFLAGS) radix_test.o $(LDLIBS) -o $(EXEC)
-
-radix_tree_test.o: radix_test.c radix_tree.h
-	$(CC) -c $(CFLAGS) radix_test.c
+$(EXEC): libradixtree.a $(EXEC).o
+	$(CC) $(LDFLAGS) $(EXEC).o $(LDLIBS) -o $(EXEC)
 
 libradixtree.a: lock_level.o lock_node.o lock_subtree.o lockless.o \
 	sequential.o
@@ -30,20 +30,8 @@ libradixtree.a: lock_level.o lock_node.o lock_subtree.o lockless.o \
 		lockless.o sequential.o
 	ranlib libradixtree.a
 
-lock_level.o: lock_level.c radix_tree.h
-	$(CC) -c $(CFLAGS) lock_level.c
-
-lock_node.o: lock_node.c radix_tree.h
-	$(CC) -c $(CFLAGS) lock_node.c
-
-lock_subtree.o: lock_subtree.c radix_tree.h
-	$(CC) -c $(CFLAGS) lock_subtree.c
-
-lockless.o: lockless.c radix_tree.h
-	$(CC) -c $(CFLAGS) lockless.c
-
-sequential.o: sequential.c radix_tree.h
-	$(CC) -c $(CFLAGS) sequential.c
+%.o: %.c $(DEPS)
+	$(CC) -c -o $@ $< $(CFLAGS)
 
 .PHONY: clean
 clean:
