@@ -77,4 +77,5 @@ THREADS = 4
 
 .PHONY: test_and_plot
 test_and_plot:
-	./test_and_plot.py $(GRAPH) $(RANGE) $(KEYS) $(LOOKUPS) $(TESTS) $(THREADS)
+	./test_and_plot.py $(GRAPH) $(RANGE) $(KEYS) $(LOOKUPS) $(TESTS) \
+		$(THREADS)

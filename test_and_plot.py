@@ -28,6 +28,7 @@ args = sys.argv
 
 filename = args[0]
 test_file = "radix_test"
+proc_list_policy = "--policy=compact-smt"
 num_args = len(args)
 
 def print_help(args):
@@ -76,8 +77,8 @@ tests = int(args[5])
 threads = int(args[6])
 
 implementations = [
-	"lock_level",
 	"sequential",
+	"lock_level",
 	"lock_node",
 	"lock_subtree",
 	"lockless"
@@ -126,8 +127,11 @@ def test1():
 			datafile.write("{}\t".format(counter))
 			print("Number of threads: {}".format(counter))
 
+			proc_list = subp.check_output(["./list.pl",
+				proc_list_policy, str(counter)])
+
 			output = subp.check_output(["taskset", "-c",
-				"0-{}".format(counter - 1),
+				proc_list,
 				"./{}".format(test_file),
 				"-r{}".format(str(tree_range)),
 				"-k{}".format(str(keys)),
@@ -169,8 +173,11 @@ def test2():
 			datafile.write("{}\t".format(counter))
 			print("Number of threads: {}".format(counter))
 
+			proc_list = subp.check_output(["./list.pl",
+				proc_list_policy, str(counter)])
+
 			run_time = subp.check_output(["taskset", "-c",
-				"0-{}".format(counter - 1),
+				proc_list,
 				"./{}".format(test_file),
 				"-r{}".format(str(tree_range)),
 				"-k{}".format(str(keys)),
