@@ -87,6 +87,7 @@ static void *radix_tree_find_alloc(struct radix_tree *tree, unsigned long key,
 			*next_slot = new;
 			current_node = new;
 		} else {
+			pthread_mutex_unlock(&lock);
 			return NULL;
 		}
 
