@@ -34,11 +34,11 @@ This approach maintains thread safety because no two threads will access the sam
 
 ### lock_subtree
 
-The main problem with **lock_node** is that it acquires and releases a very large quantity of mutexes (every time a node is being accessed!), which causes signifcant slowdown in the lookups.
+The main problem with **lock_node** is that it acquires and releases a very large quantity of mutexes (every time a node is being accessed!), which causes significant slowdown in the lookups.
 
 To fix that, we can observe the path that a thread traverses by performing a lookup. It starts on the root node and goes, node by node, until a leaf. This path that all threads traverse during a lookup is a subtree of the radix tree, and all the operations a thread might perform are restrict to this subtree.
 
-Therefore, it suffices to keep thread safety to lock the subtree about to be traversed by a thread at the beggining of all lookups and unlock it when the lookup finishes.
+Therefore, it suffices to keep thread safety to lock the subtree about to be traversed by a thread at the beginning of all lookups and unlock it when the lookup finishes.
 
 This approach reduces the number of mutexes in comparison to **lock_node**
 
@@ -134,8 +134,7 @@ Running the test program for **lock_level** using perf, we can see that the main
 
 **perf report --stdio**
 
- Overhead     Command         Shared Object                                       Symbol
- ........  ..........  ....................  ...........................................
+ [Overhead]   [Command]     [Shared Object]       [Symbol]    
     65.03%  radix_test  [kernel.kallsyms]     [k] _raw_spin_lock                         
      6.81%  radix_test  libpthread-2.19.so    [.] pthread_mutex_lock                     
      6.43%  radix_test  [kernel.kallsyms]     [k] _raw_spin_unlock_irqrestore            
@@ -152,8 +151,7 @@ For **lock_node**, the problem is that it has to acquire and release a mutex for
 
 **perf report --stdio**
 
- Overhead     Command         Shared Object                                       Symbol
- ........  ..........  ....................  ...........................................
+ [Overhead]     [Command]         [Shared Object]                                       [Symbol]        
     92.65%  radix_test  [kernel.kallsyms]     [k] _raw_spin_lock                         
      3.55%  radix_test  libpthread-2.19.so    [.] pthread_mutex_lock                     
      0.65%  radix_test  libpthread-2.19.so    [.] __lll_lock_wait                        
@@ -171,8 +169,7 @@ For **sequential**, we have:
 
 **perf report --stdio**
 
- Overhead     Command         Shared Object                                       Symbol
- ........  ..........  ....................  ...........................................
+ [Overhead]     [Command]         [Shared Object]                                       [Symbol]   
     93.41%  radix_test  [kernel.kallsyms]     [k] _raw_spin_lock                         
      1.54%  radix_test  radix_test            [.] radix_tree_find                        
      1.27%  radix_test  libpthread-2.19.so    [.] pthread_mutex_lock                     
@@ -192,8 +189,7 @@ Among the implementations that provide synchronization through mutexes, the one 
 
 **perf report --stdio**
 
- Overhead     Command       Shared Object                                       Symbol
- ........  ..........  ..................  ...........................................
+ [Overhead]     [Command]       [Shared Object]                                       [Symbol]   
     36.31%  radix_test  libpthread-2.19.so  [.] pthread_mutex_lock                     
     20.85%  radix_test  libpthread-2.19.so  [.] pthread_mutex_unlock                   
      7.66%  radix_test  [kernel.kallsyms]   [k] _raw_spin_lock                         
@@ -216,8 +212,7 @@ Finally, the parallel approach **lockless** gets rid of the use of mutexes (and 
 
 **perf report --stdio**
 
- Overhead     Command      Shared Object                                       Symbol
- ........  ..........  .................  ...........................................
+ [Overhead]     [Command]      [Shared Object]                                       [Symbol]   
     76.49%  radix_test  radix_test         [.] thread_find                            
      6.10%  radix_test  libc-2.19.so       [.] __random                               
      6.02%  radix_test  radix_test         [.] radix_tree_find_alloc                  
@@ -230,7 +225,7 @@ Finally, the parallel approach **lockless** gets rid of the use of mutexes (and 
 
 We can see that there is a gain in performance caused by the absence of operations of locking and unlocking mutexes and the implementation spends more time doing the actual work we want to benchmark. Also, we can see that the lookups themselves are very quick compared to the other operations in the loop function (thread_find) each thread executes.
 
-Additionally, we can see in the graphs below the relation that compares all the implementations and can give some insight on how each thread stands in comparison to the others.
+Additionally, we can see in the graphs below the relation that compares all the implementations and can give some insight on how each one stands in comparison to the others.
 
 **Number of Threads x Throughput**
 
