@@ -53,61 +53,54 @@ static int find_slot_index(unsigned long key, int levels_left, int radix)
 static void *radix_tree_find_alloc(struct radix_tree *tree, unsigned long key,
 			    void *(*create)(unsigned long))
 {
-	int current_level = 0;
-	int levels_left = tree->max_height - 1;
+	int levels_left = tree->max_height;
 	int radix = tree->radix;
 	int n_slots = 1 << radix;
 	int index;
-	pthread_mutex_t *lock;
-
 	struct radix_node *current_node = tree->node;
 	void **next_slot = NULL;
+	void *slot;
+
+	pthread_mutex_t *lock;
 
 	while (levels_left) {
 		index = find_slot_index(key, levels_left, radix);
-
 		lock = &(current_node->lock);
 		pthread_mutex_lock(lock);
 
 		next_slot = &current_node->slots[index];
+		slot = *next_slot;
 
-		if (*next_slot) {
-			current_node = *next_slot;
+		if (slot) {
+			current_node = slot;
 		} else if (create) {
-			*next_slot = calloc(sizeof(struct radix_node) +
-				(n_slots * sizeof(void *)), 1);
+			void *new;
 
-			if (!*next_slot) {
+			if (levels_left != 1)
+				new = calloc(sizeof(struct radix_node) +
+					(n_slots * sizeof(void *)), 1);
+			else
+				new = create(key);
+
+			if (!new)
 				die_with_error("failed to create new node.\n");
-			} else {
-				current_node = *next_slot;
+
+			*next_slot = new;
+			current_node = new;
+
+			if (levels_left != 1)
 				pthread_mutex_init(&(current_node->lock),
-						   NULL);
-			}
+					NULL);
 		} else {
 			pthread_mutex_unlock(lock);
 			return NULL;
 		}
 
 		pthread_mutex_unlock(lock);
-
-		current_level++;
 		levels_left--;
 	}
 
-	index = find_slot_index(key, levels_left, radix);
-
-	lock = &(current_node->lock);
-	pthread_mutex_lock(lock);
-
-	next_slot = &current_node->slots[index];
-
-	if (!(*next_slot) && create)
-		*next_slot = create(key);
-
-	pthread_mutex_unlock(lock);
-
-	return *next_slot;
+	return current_node;
 }
 
 static void *radix_tree_find(struct radix_tree *tree, unsigned long key)
@@ -129,7 +122,6 @@ static void radix_tree_delete_node(struct radix_node *node, int n_slots,
 				radix_tree_delete_node(next_node, n_slots,
 						       levels_left - 1);
 
-				pthread_mutex_destroy(&(next_node->lock));
 				free(next_node);
 			}
 		}
