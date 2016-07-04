@@ -58,15 +58,15 @@ When that happens, it is necessary to make sure only one of the threads is succe
 
 The test program receives as arguments the following values:
 
-./test -r RANGE -k KEYS -l LOOKUPS - t TESTS -p THREADS -i IMPLEMENTATION
+./radix_test -b BITS -r RADIX -k KEYS -l LOOKUPS -p THREADS -i IMPLEMENTATION
 
-RANGE -> Maximum number of tracked bits and radix to use in order to generate random trees in the tests.
+BITS -> Number of tracked bits for the radix tree.
 
-KEYS -> Number of keys to be inserted in the trees for each test instance. The test program will insert in the trees all keys on the interval [0, KEYS]
+RADIX -> Radix value for the tree.
+
+KEYS -> Number of keys to be inserted in the tree. The test program will insert all keys on the interval [0, KEYS], respecting the range of the lookups, which is calculated as (2 ^ (BITS) - 1) (maximum key tracked by the tree without key duplication). 
 
 LOOKUPS -> Number of lookups to perform on the tree. The keys to search on the tree are randomly generated.
-
-TESTS -> Number of test instances per program execution.
 
 THREADS -> Number of threads performing lookups concurrently.
 
@@ -75,16 +75,13 @@ IMPLEMENTATION -> Selects which implementation to test, among the ones described
 ### Structure
 
 The test program asserts the Radix Tree implementation's correctness by keeping track of the pointers returned by the functions **radix_tree_find** and **radix_tree_find_alloc**. 
-Initially, there is an array with all NULL entries, where each entry correspond to one possible key to be generated (the size of this array comes from RANGE, since the highest key is the highest number we can represent with RANGE bits.)
+Initially, there is an array with all NULL entries, where each entry correspond to one possible key to be looked up on the tree (the size of this array comes from the number of tracked bits, since the highest key is the highest number we can represent with BITS bits.)
 Then the main loop in the program will repeat the following steps:
 
-	1)	Create a random radix_tree
-	2) 	Insert all keys in the interval [0, KEYS] in the tree.
+	1)	Create a radix tree using the values of BITS and RADIX.
+	2) 	Insert all keys in the interval [0, KEYS] (or [0, LOOKUPS_RANGE], where LOOKUPS_RANGE = (2 ^ (BITS) - 1), if it is smaller) in the tree
 	3)	Generates a random array of size LOOKUPS for each thread.
 	4)	Each thread perform lookups on each of these elements.
-	5)	Delete the tree.
-
-This loop is repeated **TESTS** number of times.
 
 ### Types of errors
 
@@ -105,15 +102,14 @@ The test file has as main goal asserting the correctness of the implementation. 
 
 In order to make the testing process even easier and more automated, a script written in **Python** was created. The file **test_and_plot.py** obtain the output for all implementations and generates graphs to compare. For this, it uses the Gnuplot utility.
 
-#### Structure
+#### Arguments
 
-The structure of the script is as follows:
+The test script receives as arguments the following values:
 
-	1) Compile the source code and obtain the executable test file.
-	3) Run it for each of the implementations with different parameter values.
-	4) Obtain the running time for each execution.
-	5) Store this data in an output file.
-	6) Plot a graph for each output file.
+./radix_test GRAPH=g BITS=b RADIX=r KEYS=k LOOKUPS=l TESTS=t THREADS=p
+
+g -> Type of graph to be generated.
+p -> Maximum number of threads to use to perform the tests.
 
 #### Types of Graphs
 
@@ -122,15 +118,45 @@ Currently, these are the graphs supported by the script:
 	1) Number of Threads x Running Time
 	2) Number of Threads x Throughput (Lookups/Execution Time)
 
+#### Structure
+
+The structure of the script is as follows:
+
+    1) Compile the source code and obtain the executable test file.
+    2) Run it for each of the implementations with different parameter values.
+    3) Obtain the running time for each execution.
+    4) Store this data in an output file.
+    5) Plot a graph for each output file.
+
 #### Graphs and Implementations' Performance
 
 The very first observation to make regarding the performance of the implementations, is that performing the same amount of lookups for a test program which makes no use of the pthread library would be faster than using **sequential**. This happens due to the cost of creating threads (**pthread_create**), managing mutexes (**pthread_mutex_lock and pthread_mutex_unlock**) and waiting for them to finish their work (**pthread_join**).
 
-Analyzing the running time and throughput, we see that the two implementations with worst performance, from those that make use of mutexes, are **lock_level** and **lock_node**. The implementation **lock_level** works with mutexes that lock the current level on which they are working in the tree. This is expected to be a low performance implementation because, usually, the radix trees will not have a large height (tracked bits divided by radix). The maximum height of the tree will then **limit** the number of threads than can traverse the tree concurrently.
+For **sequential**, we have:
+
+**perf record ./radix_test -b20 -r4 -k5000000 -l10000000 -t1 -p32 -isequential**
+
+**perf report --stdio**
+
+ [Overhead]     [Command]         [Shared Object]                                       [Symbol]   
+    93.41%  radix_test  [kernel.kallsyms]     [k] _raw_spin_lock                         
+     1.54%  radix_test  radix_test            [.] radix_tree_find                        
+     1.27%  radix_test  libpthread-2.19.so    [.] pthread_mutex_lock                     
+     0.78%  radix_test  [kernel.kallsyms]     [k] system_call_after_swapgs               
+     0.67%  radix_test  libpthread-2.19.so    [.] __lll_lock_wait                        
+     0.51%  radix_test  radix_test            [.] thread_find                            
+     0.41%  radix_test  libpthread-2.19.so    [.] pthread_mutex_unlock                   
+     0.33%  radix_test  [kernel.kallsyms]     [k] get_futex_key_refs.isra.13             
+     0.22%  radix_test  [kernel.kallsyms]     [k] _raw_spin_unlock_irqrestore            
+     0.14%  radix_test  radix_test            [.] radix_tree_find_alloc     
+
+We can see that there is a high thread containment due to the increased number of locking operations. No parallelism is explored here because the threads are not allowed to work at the same time.                     
+
+Analyzing the running time and throughput, we see that the two implementations with worst performance (after sequential), are **lock_level** and **lock_node**. The implementation **lock_level** works with mutexes that lock the current level on which they are working in the tree. This is expected to be a low performance implementation because, usually, the radix trees will not have a large height (tracked bits divided by radix). The maximum height of the tree will then **limit** the number of threads than can traverse the tree concurrently.
 
 Running the test program for **lock_level** using perf, we can see that the main overhead for this implementation is the lock of mutexes.
 
-**perf record ./radix_test -r31 -k5000000 -l10000000 -t1 -p32 -ilock_level**
+**perf record ./radix_test -b20 -r4 -k5000000 -l10000000 -t1 -p32 -ilock_level**
 
 **perf report --stdio**
 
@@ -147,7 +173,7 @@ Running the test program for **lock_level** using perf, we can see that the main
 
 For **lock_node**, the problem is that it has to acquire and release a mutex for every single node it traverses. The cost for doing this is very expensive, since the tree may have up to **sum{from 1 to maximum height} of (1 ^ number of slots per node)** nodes, which can be a very large number.
 
-**perf record ./radix_test -r31 -k5000000 -l10000000 -t1 -p32 -ilock_node**
+**perf record ./radix_test -b20 -r4 -k5000000 -l10000000 -t1 -p32 -ilock_node**
 
 **perf report --stdio**
 
@@ -163,29 +189,9 @@ For **lock_node**, the problem is that it has to acquire and release a mutex for
      0.18%  radix_test  [kernel.kallsyms]     [k] _raw_spin_unlock_irqrestore            
      0.10%  radix_test  [kernel.kallsyms]     [k] _raw_spin_unlock          
 
-For **sequential**, we have:
+Among the implementations that provide synchronization through mutexes, the one with best performance is **lock_subtree**. This implementation acquires a lock for the subtree (of root node) about to be traversed. This protocol acquires way fewer mutexes than **lock_node**. Here the amount of threads allowed to work concurrently is at most the number of slots in one node of the tree.
 
-**perf record ./radix_test -r31 -k5000000 -l10000000 -t1 -p32 -isequential**
-
-**perf report --stdio**
-
- [Overhead]     [Command]         [Shared Object]                                       [Symbol]   
-    93.41%  radix_test  [kernel.kallsyms]     [k] _raw_spin_lock                         
-     1.54%  radix_test  radix_test            [.] radix_tree_find                        
-     1.27%  radix_test  libpthread-2.19.so    [.] pthread_mutex_lock                     
-     0.78%  radix_test  [kernel.kallsyms]     [k] system_call_after_swapgs               
-     0.67%  radix_test  libpthread-2.19.so    [.] __lll_lock_wait                        
-     0.51%  radix_test  radix_test            [.] thread_find                            
-     0.41%  radix_test  libpthread-2.19.so    [.] pthread_mutex_unlock                   
-     0.33%  radix_test  [kernel.kallsyms]     [k] get_futex_key_refs.isra.13             
-     0.22%  radix_test  [kernel.kallsyms]     [k] _raw_spin_unlock_irqrestore            
-     0.14%  radix_test  radix_test            [.] radix_tree_find_alloc                          
-
-It's important to note that **sequential** is usually faster than **lock_level** but slower than **lock_node**. This can be explained as a direct result of the thread waiting issue. For **lock_node**, although the amount of locking/unlocking operations is very large, it is very unlikely that two threads would wait for a mutex to be unlocked, given the high number of nodes, it is more likely that the lookups follow different paths. With **sequential** and **lock_level**, however, the threads wait for mutexes to be unlocked constantly.
-
-Among the implementations that provide synchronization through mutexes, the one with best performance is **lock_subtree**. This implementation acquires a lock for the subtree (of root node) about to be traversed. This protocol acquires way fewer mutexes than **lock_node**.
-
-**perf record ./radix_test -r31 -k5000000 -l10000000 -t1 -p32 -ilock_subtree**
+**perf record ./radix_test -b20 -r4 -k5000000 -l10000000 -t1 -p32 -ilock_subtree**
 
 **perf report --stdio**
 
@@ -208,7 +214,7 @@ Among the implementations that provide synchronization through mutexes, the one 
 
 Finally, the parallel approach **lockless** gets rid of the use of mutexes (and all the cost that comes with it for locking and unlocking mutexes) by exploring atomic operations, namely the macro [ACCESS_ONCE](https://lwn.net/Articles/508991/) and the GCC built-in function [__sync_bool_compare_and_swap](https://gcc.gnu.org/onlinedocs/gcc-4.4.3/gcc/Atomic-Builtins.html). These operations will allow the code to keep synchronization between threads and do not rely on the use of mutexes.
 
-**perf record ./radix_test -r31 -k5000000 -l10000000 -t1 -p32 -ilockless**
+**perf record ./radix_test -b20 -r4 -k5000000 -l10000000 -t1 -p32 -ilockless**
 
 **perf report --stdio**
 

@@ -1,7 +1,7 @@
 /*
  * radix_test.c
  */
-#include <pthread.h>
+
 #include "radix_tree.h"
 #include <stdbool.h>
 #include <stdio.h>
@@ -25,13 +25,13 @@
 #define BILLION 1E9
 
 /* Default parameter values */
-#define TREE_RANGE 16;
-#define N_KEYS 30000;
-#define N_LOOKUPS 60000;
-#define N_TESTS 4;
-#define N_THREADS 16;
+#define BITS 16
+#define RADIX 4
+#define KEYS 30000;
+#define LOOKUPS 60000;
+#define THREADS 4;
 
-#define OPTSTRING "r:k:l:t:p:i:"
+#define OPTSTRING "b:r:k:l:t:p:i:"
 
 /*
  * Global Variables
@@ -108,8 +108,8 @@ static void *thread_find(void *thread_arg)
 
 static void print_usage(char *file_name)
 {
-	fprintf(stderr, "Usage:\t%s [-r range] [-k keys] [-l lookups]"
-		"[-t tests] [-p threads] [-i implementation]\n", file_name);
+	fprintf(stderr, "Usage:\t%s [-b bits] [-r radix] [-k keys]"
+		"[-l lookups] [-p threads] [-i implementation]\n", file_name);
 }
 
 static struct radix_tree_desc *radix_tree_desc_find(const char *name)
@@ -146,13 +146,13 @@ int main(int argc, char **argv)
 	double lookup_time = 0;
 	struct timespec start, end;
 
-	int tree_range; /* maximum number of tracked bits and radix */
-	unsigned long n_keys; /* number of inserted keys */
-	unsigned long n_tests; /* number of test instances per execution */
+	unsigned int bits; /* number of tracked bits */
+	unsigned int radix;
+	unsigned long n_keys; /* number of intended inserted keys */
+	unsigned long inserted_keys; /* number of effectively inserted key */
 	unsigned long lookups_range; /* max key to be looked up on the tree */
 
-	int i, j, k, opt;
-	int bits, radix;
+	int i, k, opt;
 	int *ids;
 	void *temp; /* result of tree lookups */
 
@@ -160,20 +160,21 @@ int main(int argc, char **argv)
 
 	/* Default parameter values */
 
-	tree_range = TREE_RANGE;
-	n_keys = N_KEYS;
-	n_lookups = N_LOOKUPS;
-	n_tests = N_TESTS;
-	n_threads = N_THREADS;
+	bits = BITS;
+	radix = RADIX;
+	n_keys = KEYS;
+	n_lookups = LOOKUPS;
+	n_threads = THREADS;
 	impl_desc = descs[0];
-
-	lookups_range = n_keys;
 
 	opt = getopt(argc, argv, OPTSTRING);
 	while (opt != -1) {
 		switch (opt) {
+		case 'b':
+			bits = atoi(optarg);
+			break;
 		case 'r':
-			tree_range = atoi(optarg);
+			radix = atoi(optarg);
 			break;
 		case 'k':
 			n_keys = atoi(optarg);
@@ -181,9 +182,6 @@ int main(int argc, char **argv)
 			break;
 		case 'l':
 			n_lookups = atoi(optarg);
-			break;
-		case 't':
-			n_tests = atoi(optarg);
 			break;
 		case 'p':
 			n_threads = atoi(optarg);
@@ -206,6 +204,10 @@ int main(int argc, char **argv)
 		opt = getopt(argc, argv, OPTSTRING);
 	}
 
+	lookups_range = (1L << bits) - 1;
+
+	inserted_keys = (n_keys > lookups_range) ? lookups_range : n_keys;
+
 	threads = malloc(sizeof(*threads) * n_threads);
 	if (!threads)
 		die_with_error("failed to allocate threads array.\n");
@@ -223,91 +225,83 @@ int main(int argc, char **argv)
 
 	srand(0);
 
-	/* test loop */
-	for (j = 0; j < n_tests; j++) {
-		n_ready_threads = 0;
-		test_start = false;
+	/* Test */
 
-		bits = (rand() % tree_range) + 1;
-		radix = (rand() % tree_range) + 1;
+	n_ready_threads = 0;
+	test_start = false;
 
-		fprintf(stderr, "Test %d\t", j);
-		fprintf(stderr, "TESTING TREE: BITS = %d, RADIX = %d\n",
-			bits, radix);
+	fprintf(stderr, "TESTING TREE: BITS = %d, RADIX = %d\n",
+		bits, radix);
 
-		items = calloc(n_keys, sizeof(*items));
+	items = calloc(lookups_range, sizeof(*items));
 
-		if (!items)
-			die_with_error("failed to allocate items array.\n");
+	if (!items)
+		die_with_error("failed to allocate items array.\n");
 
-		impl_desc->init(&myTree, bits, radix);
+	impl_desc->init(&myTree, bits, radix);
 
-		/* testing find_alloc */
-		for (i = 0; i < n_keys; i++) {
-			temp = impl_desc->find_alloc(&myTree, i, create);
 
-			if (items[i]) {
-				if (temp != items[i]) {
-					err_flag = 1;
-					break;
-				}
-			} else if (!temp) {
+
+	/* testing find_alloc */
+	for (i = 0; i < inserted_keys; i++) {
+		temp = impl_desc->find_alloc(&myTree, i, create);
+
+		if (items[i]) {
+			if (temp != items[i]) {
 				err_flag = 1;
 				break;
-			} else {
-				items[i] = temp;
 			}
+		} else if (!temp) {
+			err_flag = 1;
+			break;
+		} else {
+			items[i] = temp;
 		}
-
-		if (err_flag) {
-			fprintf(stderr, "\n[Error number %d detected]\n",
-				err_flag);
-
-			return err_flag;
-		}
-
-		/* generates random keys to lookup */
-		for (i = 0; i < n_threads; i++)
-			for (k = 0; k < n_lookups; k++)
-				keys[i][k] = rand() % lookups_range;
-
-		ids = malloc(sizeof(*ids) * n_threads);
-		for (i = 0; i < n_threads; i++)
-			ids[i] = i;
-
-		/* testing find */
-		for (i = 0; i < n_threads; i++)
-			pthread_create(&threads[i], NULL, thread_find,
-				&ids[i]);
-
-		while (ACCESS_ONCE(n_ready_threads) != n_threads)
-			cpu_relax();
-
-		test_start = true;
-		clock_gettime(CLOCK_REALTIME, &start);
-
-		for (i = 0; i < n_threads; i++)
-			pthread_join(threads[i], NULL);
-
-		clock_gettime(CLOCK_REALTIME, &end);
-
-		lookup_time += end.tv_sec - start.tv_sec +
-			(end.tv_nsec - start.tv_nsec) / BILLION;
-
-		free(ids);
-
-		if (err_flag) {
-			fprintf(stderr, "\n[Error number %d detected]\n",
-				err_flag);
-
-			return err_flag;
-		}
-
-		free(items);
-		impl_desc->tree_delete(&myTree);
 	}
 
-	printf("%f\n", lookup_time);
+	if (err_flag) {
+		fprintf(stderr, "\n[Error number %d detected]\n",
+			err_flag);
+
+		return err_flag;
+	}
+
+	/* generates random keys to lookup */
+	for (i = 0; i < n_threads; i++)
+		for (k = 0; k < n_lookups; k++)
+			keys[i][k] = rand() % lookups_range;
+
+	ids = malloc(sizeof(*ids) * n_threads);
+	for (i = 0; i < n_threads; i++)
+		ids[i] = i;
+
+	/* testing find */
+	for (i = 0; i < n_threads; i++)
+		pthread_create(&threads[i], NULL, thread_find,
+			&ids[i]);
+
+	while (ACCESS_ONCE(n_ready_threads) != n_threads)
+		cpu_relax();
+
+	test_start = true;
+	clock_gettime(CLOCK_REALTIME, &start);
+
+	for (i = 0; i < n_threads; i++)
+		pthread_join(threads[i], NULL);
+
+	clock_gettime(CLOCK_REALTIME, &end);
+
+	lookup_time += end.tv_sec - start.tv_sec +
+		(end.tv_nsec - start.tv_nsec) / BILLION;
+
+	if (err_flag) {
+		fprintf(stderr, "\n[Error number %d detected]\n",
+			err_flag);
+
+		return err_flag;
+	}
+
+	printf("%f", lookup_time);
 
 	return 0;
 }

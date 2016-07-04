@@ -27,7 +27,6 @@ struct radix_tree_desc {
         void *(*find_alloc)(struct radix_tree *, unsigned long,
         	void *(*)(unsigned long));
         void *(*find)(struct radix_tree *, unsigned long);
-        void (*tree_delete)(struct radix_tree *);
 };
 
 struct radix_tree_desc sequential_desc;
@@ -53,11 +52,5 @@ static void *radix_tree_find_alloc(struct radix_tree *tree, unsigned long index,
  */
 
 static void *radix_tree_find(struct radix_tree *tree, unsigned long key);
-
-/*
- * Deletes a tree and its contents by deallocating its memory
- */
-
-static void radix_tree_delete(struct radix_tree *tree);
 
 #endif

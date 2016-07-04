@@ -46,16 +46,17 @@ clear:
 # Type of graph to be generated through tests.
 GRAPH = 1
 
-# Maximum number of tracked bits and radix to use in order to generate
-# random trees in the tests. Also defines the numer of lookups, which is
-# 2 ^ RANGE
-RANGE = 15
+# Number of tracked bits in the tree
+BITS = 16
+
+# Tree radix
+RADIX = 4
 
 # Number of keys to be inserted in the trees for each test instance.
-KEYS = 15000
+KEYS = 30000
 
 # Number of lookups to perform on the tree
-LOOKUPS = 30000
+LOOKUPS = 60000
 
 # Number of test instances per program execution.
 TESTS = 1
@@ -65,5 +66,5 @@ THREADS = 4
 
 .PHONY: test_and_plot
 test_and_plot:
-	./test_and_plot.py $(GRAPH) $(RANGE) $(KEYS) $(LOOKUPS) $(TESTS) \
-		$(THREADS)
+	./test_and_plot.py $(GRAPH) $(BITS) $(RADIX) $(KEYS) $(LOOKUPS) \
+		$(TESTS) $(THREADS)

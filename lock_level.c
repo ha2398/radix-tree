@@ -2,7 +2,6 @@
  * lock_level.c
  */
 
-#include <pthread.h>
 #include "radix_tree.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -120,48 +119,9 @@ static void *radix_tree_find(struct radix_tree *tree, unsigned long key)
 	return radix_tree_find_alloc(tree, key, NULL);
 }
 
-static void radix_tree_delete_node(struct radix_node *node, int n_slots,
-				   int levels_left)
-{
-	int i;
-	struct radix_node *next_node = NULL;
-
-	if (levels_left) {
-		for (i = 0; i < n_slots; i++) {
-			next_node = node->slots[i];
-
-			if (next_node) {
-				radix_tree_delete_node(next_node, n_slots,
-						       levels_left - 1);
-				free(next_node);
-			}
-		}
-	} else {
-		for (i = 0; i < n_slots; i++) {
-			if (node->slots[i])
-				free(node->slots[i]);
-		}
-	}
-}
-
-static void radix_tree_delete(struct radix_tree *tree)
-{
-	int i;
-	int n_slots = 1 << tree->radix;
-
-	for (i = 0; i < tree->max_height; i++)
-		pthread_mutex_destroy(&locks[i]);
-
-	free(locks);
-
-	radix_tree_delete_node(tree->node, n_slots, tree->max_height - 1);
-	free(tree->node);
-}
-
 struct radix_tree_desc lock_level_desc = {
 	.name = "lock_level",
 	.init = radix_tree_init,
 	.find_alloc = radix_tree_find_alloc,
 	.find = radix_tree_find,
-	.tree_delete = radix_tree_delete
 };
