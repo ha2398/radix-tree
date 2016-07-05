@@ -236,9 +236,9 @@ Additionally, we can see in the graphs below the relation that compares all the 
 
 **Number of Threads x Throughput**
 
-![Graph 1](https://s31.postimg.org/6rob13vy3/graph1.png)
-![Graph 2](https://s31.postimg.org/s4mg64nmz/graph2.png)
+![Graph 1](https://s31.postimg.org/cfe422f0b/graph2.png)
+![Graph 2](https://s32.postimg.org/3xc5ig3b9/graph3.png)
 
 **Number of Threads x Running Time**
 
-![Graph 3](https://s32.postimg.org/wr8ajitgl/graph3.png)
+![Graph 3](https://s32.postimg.org/rv4aji6hx/graph4.png)
