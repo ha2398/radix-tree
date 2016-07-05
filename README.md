@@ -72,6 +72,20 @@ THREADS -> Number of threads performing lookups concurrently.
 
 IMPLEMENTATION -> Selects which implementation to test, among the ones described above.
 
+The program has default parameters in case they are not provided by the user:
+
+BITS = 16
+
+RADIX = 4
+
+KEYS = 30000
+
+LOOKUPS = 60000
+
+THREADS = 4
+
+IMPLEMENTATION = SEQUENTIAL
+
 ### Structure
 
 The test program asserts the Radix Tree implementation's correctness by keeping track of the pointers returned by the functions **radix_tree_find** and **radix_tree_find_alloc**. 
@@ -79,7 +93,7 @@ Initially, there is an array with all NULL entries, where each entry correspond 
 Then the main loop in the program will repeat the following steps:
 
 	1)	Create a radix tree using the values of BITS and RADIX.
-	2) 	Insert all keys in the interval [0, KEYS] (or [0, LOOKUPS_RANGE], where LOOKUPS_RANGE = (2 ^ (BITS) - 1), if it is smaller) in the tree
+	2) 	Insert all keys in the interval [0, KEYS] (or [0, LOOKUPS_RANGE], where LOOKUPS_RANGE = (2 ^ (BITS) - 1), if it is smaller than KEYS) in the tree
 	3)	Generates a random array of size LOOKUPS for each thread.
 	4)	Each thread perform lookups on each of these elements.
 
@@ -106,10 +120,29 @@ In order to make the testing process even easier and more automated, a script wr
 
 The test script receives as arguments the following values:
 
-./radix_test GRAPH=g BITS=b RADIX=r KEYS=k LOOKUPS=l TESTS=t THREADS=p
+./test_and_plot.py GRAPH BITS RADIX KEYS LOOKUPS TESTS THREADS
 
-g -> Type of graph to be generated.
-p -> Maximum number of threads to use to perform the tests.
+GRAPH -> Type of graph to be generated.
+
+THREADS -> Maximum number of threads to use to perform the tests.
+
+Using the target **test_and_plot** in th Makefile, the compilation, testing and plotting process is automated.
+
+The default parameter values for this target are:
+
+GRAPH = 1
+
+BITS = 16
+
+RADIX = 4
+
+KEYS = 30000
+
+LOOKUPS = 60000
+
+TESTS = 2
+
+THREADS = 4
 
 #### Types of Graphs
 
@@ -134,11 +167,11 @@ The very first observation to make regarding the performance of the implementati
 
 For **sequential**, we have:
 
-**perf record ./radix_test -b20 -r4 -k5000000 -l10000000 -t1 -p32 -isequential**
+**perf record ./radix_test -b20 -r4 -k5000000 -l10000000 -p32 -isequential**
 
 **perf report --stdio**
 
- [Overhead] [Command]    [Shared Object]            [Symbol]
+ [Overhead] [Command]    [Shared Object]            [Symbol]       
     93.20%  radix_test  [kernel.kallsyms]     [k] _raw_spin_lock                         
      1.19%  radix_test  radix_test            [.] radix_tree_find                        
      0.93%  radix_test  [kernel.kallsyms]     [k] system_call_after_swapgs               
@@ -152,11 +185,11 @@ For **sequential**, we have:
 
 We can see that there is a high thread containment due to the increased number of locking operations. No parallelism is explored here because the threads are not allowed to work at the same time.                     
 
-Analyzing the running time and throughput, we see that the two implementations with worst performance (after sequential), are **lock_level** and **lock_node**. The implementation **lock_level** works with mutexes that lock the current level on which they are working in the tree. This is expected to be a low performance implementation because, usually, the radix trees will not have a large height (tracked bits divided by radix). The maximum height of the tree will then **limit** the number of threads than can traverse the tree concurrently.
+Analyzing the running time and throughput, we see that two implementations have similar performance: **lock_level** and **lock_node**. The implementation **lock_level** works with mutexes that lock the current level on which they are working in the tree. This is expected to be a low performance implementation because, usually, the radix trees will not have a large height (tracked bits divided by radix). The maximum height of the tree will then **limit** the number of threads than can traverse the tree concurrently.
 
 Running the test program for **lock_level** using perf, we can see that the main overhead for this implementation is the lock of mutexes.
 
-**perf record ./radix_test -b20 -r4 -k5000000 -l10000000 -t1 -p32 -ilock_level**
+**perf record ./radix_test -b20 -r4 -k5000000 -l10000000 -p32 -ilock_level**
 
 **perf report --stdio**
 
@@ -176,7 +209,7 @@ Running the test program for **lock_level** using perf, we can see that the main
 
 For **lock_node**, the problem is that it has to acquire and release a mutex for every single node it traverses. The cost for doing this is very expensive, since the tree may have up to **sum{from 1 to maximum height} of (1 ^ number of slots per node)** nodes, which can be a very large number.
 
-**perf record ./radix_test -b20 -r4 -k5000000 -l10000000 -t1 -p32 -ilock_node**
+**perf record ./radix_test -b20 -r4 -k5000000 -l10000000 -p32 -ilock_node**
 
 **perf report --stdio**
 
@@ -196,7 +229,7 @@ For **lock_node**, the problem is that it has to acquire and release a mutex for
 
 Among the implementations that provide synchronization through mutexes, the one with best performance is **lock_subtree**. This implementation acquires a lock for the subtree (of root node) about to be traversed. This protocol acquires way fewer mutexes than **lock_node**. Here the amount of threads allowed to work concurrently is at most the number of slots in one node of the tree.
 
-**perf record ./radix_test -b20 -r4 -k5000000 -l10000000 -t1 -p32 -ilock_subtree**
+**perf record ./radix_test -b20 -r4 -k5000000 -l10000000 -p32 -ilock_subtree**
 
 **perf report --stdio**
 
@@ -214,7 +247,7 @@ Among the implementations that provide synchronization through mutexes, the one 
 
 Finally, the parallel approach **lockless** gets rid of the use of mutexes (and all the cost that comes with it for locking and unlocking mutexes) by exploring atomic operations, namely the macro [ACCESS_ONCE](https://lwn.net/Articles/508991/) and the GCC built-in function [__sync_bool_compare_and_swap](https://gcc.gnu.org/onlinedocs/gcc-4.4.3/gcc/Atomic-Builtins.html). These operations will allow the code to keep synchronization between threads and do not rely on the use of mutexes.
 
-**perf record ./radix_test -b20 -r4 -k5000000 -l10000000 -t1 -p32 -ilockless**
+**perf record ./radix_test -b20 -r4 -k5000000 -l10000000 -p32 -ilockless**
 
 **perf report --stdio**
 

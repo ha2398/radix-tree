@@ -27,11 +27,11 @@
 /* Default parameter values */
 #define BITS 16
 #define RADIX 4
-#define KEYS 30000;
-#define LOOKUPS 60000;
-#define THREADS 4;
+#define KEYS 30000
+#define LOOKUPS 60000
+#define THREADS 4
 
-#define OPTSTRING "b:r:k:l:t:p:i:"
+#define OPTSTRING "b:r:k:l:p:i:"
 
 /*
  * Global Variables

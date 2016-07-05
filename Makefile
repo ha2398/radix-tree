@@ -59,7 +59,7 @@ KEYS = 30000
 LOOKUPS = 60000
 
 # Number of test instances per program execution.
-TESTS = 1
+TESTS = 2
 
 # Maximum Number of threads to perform the tests.
 THREADS = 4
