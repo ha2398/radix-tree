@@ -34,7 +34,7 @@ static void radix_tree_init(struct radix_tree *tree, int bits, int radix)
 		return;
 	}
 
-	unsigned long n_slots = 1 << radix;
+	unsigned long n_slots = 1L << radix;
 
 	tree->radix = radix;
 	tree->max_height = DIV_ROUND_UP(bits, radix);

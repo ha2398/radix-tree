@@ -240,8 +240,6 @@ int main(int argc, char **argv)
 
 	impl_desc->init(&myTree, bits, radix);
 
-
-
 	/* testing find_alloc */
 	for (i = 0; i < inserted_keys; i++) {
 		temp = impl_desc->find_alloc(&myTree, i, create);

@@ -138,17 +138,17 @@ For **sequential**, we have:
 
 **perf report --stdio**
 
- [Overhead]     [Command]         [Shared Object]                                       [Symbol]   
-    93.41%  radix_test  [kernel.kallsyms]     [k] _raw_spin_lock                         
-     1.54%  radix_test  radix_test            [.] radix_tree_find                        
-     1.27%  radix_test  libpthread-2.19.so    [.] pthread_mutex_lock                     
-     0.78%  radix_test  [kernel.kallsyms]     [k] system_call_after_swapgs               
-     0.67%  radix_test  libpthread-2.19.so    [.] __lll_lock_wait                        
-     0.51%  radix_test  radix_test            [.] thread_find                            
-     0.41%  radix_test  libpthread-2.19.so    [.] pthread_mutex_unlock                   
-     0.33%  radix_test  [kernel.kallsyms]     [k] get_futex_key_refs.isra.13             
-     0.22%  radix_test  [kernel.kallsyms]     [k] _raw_spin_unlock_irqrestore            
-     0.14%  radix_test  radix_test            [.] radix_tree_find_alloc     
+ [Overhead] [Command]    [Shared Object]            [Symbol]
+    93.20%  radix_test  [kernel.kallsyms]     [k] _raw_spin_lock                         
+     1.19%  radix_test  radix_test            [.] radix_tree_find                        
+     0.93%  radix_test  [kernel.kallsyms]     [k] system_call_after_swapgs               
+     0.88%  radix_test  libpthread-2.19.so    [.] pthread_mutex_lock                     
+     0.68%  radix_test  libpthread-2.19.so    [.] __lll_lock_wait                        
+     0.64%  radix_test  radix_test            [.] radix_tree_find_alloc                  
+     0.60%  radix_test  [kernel.kallsyms]     [k] _raw_spin_unlock_irqrestore            
+     0.32%  radix_test  [kernel.kallsyms]     [k] get_futex_key_refs.isra.13             
+     0.27%  radix_test  libpthread-2.19.so    [.] pthread_mutex_unlock                   
+     0.18%  radix_test  radix_test            [.] thread_find                          
 
 We can see that there is a high thread containment due to the increased number of locking operations. No parallelism is explored here because the threads are not allowed to work at the same time.                     
 
@@ -161,15 +161,18 @@ Running the test program for **lock_level** using perf, we can see that the main
 **perf report --stdio**
 
  [Overhead]   [Command]     [Shared Object]       [Symbol]    
-    65.03%  radix_test  [kernel.kallsyms]     [k] _raw_spin_lock                         
-     6.81%  radix_test  libpthread-2.19.so    [.] pthread_mutex_lock                     
-     6.43%  radix_test  [kernel.kallsyms]     [k] _raw_spin_unlock_irqrestore            
-     3.89%  radix_test  libpthread-2.19.so    [.] pthread_mutex_unlock                   
-     3.66%  radix_test  libpthread-2.19.so    [.] __lll_lock_wait                        
-     2.72%  radix_test  [kernel.kallsyms]     [k] finish_task_switch                     
-     2.05%  radix_test  [kernel.kallsyms]     [k] system_call_after_swapgs               
-     1.23%  radix_test  radix_test            [.] thread_find                            
-     1.05%  radix_test  [kernel.kallsyms]     [k] get_futex_key_refs.isra.13    
+    46.09%  radix_test  [kernel.kallsyms]     [k] _raw_spin_lock                         
+    12.33%  radix_test  libpthread-2.19.so    [.] pthread_mutex_lock                     
+     9.13%  radix_test  libpthread-2.19.so    [.] pthread_mutex_unlock                   
+     8.85%  radix_test  [kernel.kallsyms]     [k] _raw_spin_unlock_irqrestore            
+     5.11%  radix_test  libpthread-2.19.so    [.] __lll_lock_wait                        
+     3.72%  radix_test  [kernel.kallsyms]     [k] finish_task_switch                     
+     2.78%  radix_test  [kernel.kallsyms]     [k] system_call_after_swapgs               
+     1.79%  radix_test  radix_test            [.] radix_tree_find_alloc                  
+     1.30%  radix_test  [kernel.kallsyms]     [k] get_futex_key_refs.isra.13             
+     1.27%  radix_test  libpthread-2.19.so    [.] __lll_unlock_wake                      
+     1.02%  radix_test  [kernel.kallsyms]     [k] get_futex_value_locked                 
+     0.88%  radix_test  radix_test            [.] thread_find       
 
 For **lock_node**, the problem is that it has to acquire and release a mutex for every single node it traverses. The cost for doing this is very expensive, since the tree may have up to **sum{from 1 to maximum height} of (1 ^ number of slots per node)** nodes, which can be a very large number.
 
@@ -177,17 +180,19 @@ For **lock_node**, the problem is that it has to acquire and release a mutex for
 
 **perf report --stdio**
 
- [Overhead]     [Command]         [Shared Object]                                       [Symbol]        
-    92.65%  radix_test  [kernel.kallsyms]     [k] _raw_spin_lock                         
-     3.55%  radix_test  libpthread-2.19.so    [.] pthread_mutex_lock                     
-     0.65%  radix_test  libpthread-2.19.so    [.] __lll_lock_wait                        
-     0.61%  radix_test  [kernel.kallsyms]     [k] system_call_after_swapgs               
-     0.54%  radix_test  libpthread-2.19.so    [.] pthread_mutex_unlock                   
-     0.42%  radix_test  radix_test            [.] radix_tree_find                        
-     0.38%  radix_test  radix_test            [.] thread_find                            
-     0.27%  radix_test  [kernel.kallsyms]     [k] get_futex_key_refs.isra.13             
-     0.18%  radix_test  [kernel.kallsyms]     [k] _raw_spin_unlock_irqrestore            
-     0.10%  radix_test  [kernel.kallsyms]     [k] _raw_spin_unlock          
+ [Overhead]  [Command]    [Shared Object]           [Symbol]        
+    84.66%  radix_test  [kernel.kallsyms]     [k] _raw_spin_lock                         
+     7.24%  radix_test  libpthread-2.19.so    [.] pthread_mutex_lock                     
+     1.47%  radix_test  libpthread-2.19.so    [.] pthread_mutex_unlock                   
+     1.19%  radix_test  libpthread-2.19.so    [.] __lll_lock_wait                        
+     1.10%  radix_test  [kernel.kallsyms]     [k] system_call_after_swapgs               
+     0.95%  radix_test  [kernel.kallsyms]     [k] _raw_spin_unlock_irqrestore            
+     0.54%  radix_test  radix_test            [.] radix_tree_find                        
+     0.50%  radix_test  [kernel.kallsyms]     [k] get_futex_key_refs.isra.13             
+     0.30%  radix_test  radix_test            [.] thread_find                            
+     0.27%  radix_test  [kernel.kallsyms]     [k] finish_task_switch                     
+     0.24%  radix_test  libpthread-2.19.so    [.] __lll_unlock_wake                      
+     0.22%  radix_test  radix_test            [.] radix_tree_find_alloc
 
 Among the implementations that provide synchronization through mutexes, the one with best performance is **lock_subtree**. This implementation acquires a lock for the subtree (of root node) about to be traversed. This protocol acquires way fewer mutexes than **lock_node**. Here the amount of threads allowed to work concurrently is at most the number of slots in one node of the tree.
 
@@ -195,22 +200,17 @@ Among the implementations that provide synchronization through mutexes, the one 
 
 **perf report --stdio**
 
- [Overhead]     [Command]       [Shared Object]                                       [Symbol]   
-    36.31%  radix_test  libpthread-2.19.so  [.] pthread_mutex_lock                     
-    20.85%  radix_test  libpthread-2.19.so  [.] pthread_mutex_unlock                   
-     7.66%  radix_test  [kernel.kallsyms]   [k] _raw_spin_lock                         
-     6.23%  radix_test  radix_test          [.] thread_find                            
-     4.25%  radix_test  radix_test          [.] radix_tree_find_alloc                  
-     4.08%  radix_test  libpthread-2.19.so  [.] __lll_lock_wait                        
-     3.42%  radix_test  radix_test          [.] radix_tree_find                        
-     3.06%  radix_test  [kernel.kallsyms]   [k] _raw_spin_unlock_irqrestore            
-     2.92%  radix_test  [kernel.kallsyms]   [k] system_call_after_swapgs               
-     1.74%  radix_test  [kernel.kallsyms]   [k] finish_task_switch                     
-     1.57%  radix_test  [kernel.kallsyms]   [k] get_futex_key_refs.isra.13             
-     1.43%  radix_test  libpthread-2.19.so  [.] __lll_unlock_wake                      
-     1.27%  radix_test  libc-2.19.so        [.] __random                               
-     0.87%  radix_test  radix_test          [.] main                                   
-     0.53%  radix_test  [kernel.kallsyms]   [k] futex_wake                           
+ [Overhead]  [Command]   [Shared Object]              [Symbol]   
+    93.94%  radix_test  [kernel.kallsyms]     [k] _raw_spin_lock                         
+     1.28%  radix_test  radix_test            [.] radix_tree_find                        
+     1.16%  radix_test  libpthread-2.19.so    [.] pthread_mutex_lock                     
+     0.81%  radix_test  [kernel.kallsyms]     [k] system_call_after_swapgs               
+     0.67%  radix_test  libpthread-2.19.so    [.] __lll_lock_wait                        
+     0.38%  radix_test  libpthread-2.19.so    [.] pthread_mutex_unlock                   
+     0.35%  radix_test  radix_test            [.] radix_tree_find_alloc                  
+     0.28%  radix_test  [kernel.kallsyms]     [k] get_futex_key_refs.isra.13             
+     0.26%  radix_test  radix_test            [.] thread_find                            
+     0.20%  radix_test  [kernel.kallsyms]     [k] _raw_spin_unlock_irqrestore                    
 
 Finally, the parallel approach **lockless** gets rid of the use of mutexes (and all the cost that comes with it for locking and unlocking mutexes) by exploring atomic operations, namely the macro [ACCESS_ONCE](https://lwn.net/Articles/508991/) and the GCC built-in function [__sync_bool_compare_and_swap](https://gcc.gnu.org/onlinedocs/gcc-4.4.3/gcc/Atomic-Builtins.html). These operations will allow the code to keep synchronization between threads and do not rely on the use of mutexes.
 
@@ -218,16 +218,17 @@ Finally, the parallel approach **lockless** gets rid of the use of mutexes (and 
 
 **perf report --stdio**
 
- [Overhead]     [Command]      [Shared Object]                                       [Symbol]   
-    76.49%  radix_test  radix_test         [.] thread_find                            
-     6.10%  radix_test  libc-2.19.so       [.] __random                               
-     6.02%  radix_test  radix_test         [.] radix_tree_find_alloc                  
-     4.16%  radix_test  radix_test         [.] main                                   
-     1.78%  radix_test  libc-2.19.so       [.] __random_r                             
-     1.23%  radix_test  radix_test         [.] radix_tree_find                        
-     1.07%  radix_test  [kernel.kallsyms]  [k] clear_page_c                           
-     1.00%  radix_test  [kernel.kallsyms]  [k] copy_page_rep                          
-     0.69%  radix_test  [kernel.kallsyms]  [k] _raw_spin_lock                        
+ [Overhead]  [Command]  [Shared Object]          [Symbol]   
+    78.06%  radix_test  radix_test         [.] radix_tree_find_alloc                  
+    11.95%  radix_test  radix_test         [.] thread_find                            
+     3.48%  radix_test  libc-2.19.so       [.] __random                               
+     2.52%  radix_test  radix_test         [.] main                                   
+     0.99%  radix_test  libc-2.19.so       [.] __random_r                             
+     0.60%  radix_test  [kernel.kallsyms]  [k] clear_page_c                           
+     0.44%  radix_test  [kernel.kallsyms]  [k] copy_page_rep                          
+     0.28%  radix_test  [kernel.kallsyms]  [k] _raw_spin_lock                         
+     0.24%  radix_test  libc-2.19.so       [.] rand                                   
+     0.22%  radix_test  radix_test         [.] radix_tree_find
 
 We can see that there is a gain in performance caused by the absence of operations of locking and unlocking mutexes and the implementation spends more time doing the actual work we want to benchmark. Also, we can see that the lookups themselves are very quick compared to the other operations in the loop function (thread_find) each thread executes.
 

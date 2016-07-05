@@ -46,7 +46,7 @@ static void radix_tree_init(struct radix_tree *tree, int bits, int radix)
 /* Finds the appropriate slot to follow in the tree */
 static int find_slot_index(unsigned long key, int levels_left, int radix)
 {
-	return (int) (key >> (levels_left * radix) & ((1 << radix) - 1));
+	return key >> ((levels_left - 1) * radix) & ((1 << radix) - 1);
 }
 
 static void *radix_tree_find_alloc(struct radix_tree *tree, unsigned long key,
